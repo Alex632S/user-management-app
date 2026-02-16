@@ -29,4 +29,5 @@ onMounted(() => {
     console.log('🚀 App mounted, MSW should be running')
   }
 })
+
 </script>
