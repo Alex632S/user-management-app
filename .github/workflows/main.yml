@@ -1,0 +1,64 @@
+name: Main CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+        
+      - name: Generate Nuxt types
+        run: npx nuxt prepare
+        
+      - name: TypeScript check
+        run: npx vue-tsc --noEmit --skipLibCheck
+        
+      - name: ESLint
+        run: npm run lint
+        
+      - name: Run tests
+        run: npm run test
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: .output
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: .output
+          
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production..."
+          # Здесь команда деплоя (например, на Vercel, Netlify или свой сервер)
+          # Пример для Vercel:
+          # npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
