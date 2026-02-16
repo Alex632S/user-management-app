@@ -1,11 +1,14 @@
 {
   "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "types": ["node", "vite/client"]
   },
   "include": [
     "app/**/*",
     "mocks/**/*",
-    "types/**/*"
+    "types/**/*",
+    "tests/**/*"
   ]
 }

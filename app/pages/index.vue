@@ -1,9 +1,13 @@
 <template>
   <div class="container">
     <h1>User Management</h1>
-    
-    <div v-if="loading">Loading...</div>
-    <div v-else-if="error">{{ error }}</div>
+
+    <div v-if="loading">
+      Loading...
+    </div>
+    <div v-else-if="error">
+      {{ error }}
+    </div>
     <div v-else>
       <div class="stats">
         <div class="stat-card">
@@ -21,18 +25,18 @@
       </div>
 
       <div class="actions">
-        <button @click="testAPI" class="btn">
+        <button class="btn" @click="testAPI">
           Refresh Users
         </button>
-        
-        <button @click="testCreate" class="btn btn-primary">
+
+        <button class="btn btn-primary" @click="testCreate">
           Test Create
         </button>
-        
-        <button 
-          @click="testDelete" 
+
+        <button
           class="btn btn-danger"
           :disabled="!users.length"
+          @click="testDelete"
         >
           Test Delete First User
         </button>
@@ -54,28 +58,28 @@
 </template>
 
 <script setup lang="ts">
-import type { User } from '../../types/user'
 import { ref, computed, onMounted } from 'vue'
+import type { User } from '../../types/user'
 
 const users = ref<User[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-const activeUsers = computed(() => 
+const activeUsers = computed(() =>
   users.value.filter((user: User) => user.status === 'active').length
 )
 
-const adminCount = computed(() => 
+const adminCount = computed(() =>
   users.value.filter((user: User) => user.role === 'admin').length
 )
 
-async function testAPI() {
+async function testAPI () {
   loading.value = true
   error.value = null
-  
+
   try {
     const response = await fetch('/api/users')
-    if (!response.ok) throw new Error('Failed to fetch')
+    if (!response.ok) { throw new Error('Failed to fetch') }
     users.value = await response.json()
     console.log('✅ Users loaded:', users.value.length)
   } catch (e) {
@@ -85,23 +89,23 @@ async function testAPI() {
   }
 }
 
-async function testCreate() {
+async function testCreate () {
   const newUser = {
     name: 'Test User',
     email: 'test@example.com',
     role: 'viewer' as const,
     status: 'active' as const
   }
-  
+
   try {
     const response = await fetch('/api/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newUser)
     })
-    
-    if (!response.ok) throw new Error('Failed to create')
-    
+
+    if (!response.ok) { throw new Error('Failed to create') }
+
     const created = await response.json()
     console.log('✅ User created:', created)
     await testAPI()
@@ -110,22 +114,22 @@ async function testCreate() {
   }
 }
 
-async function testDelete() {
+async function testDelete () {
   if (!users.value.length) {
     console.log('No users to delete')
     return
   }
-  
+
   const firstUser = users.value[0]
-  if (!firstUser) return
-  
+  if (!firstUser) { return }
+
   try {
     const response = await fetch(`/api/users/${firstUser.id}`, {
       method: 'DELETE'
     })
-    
-    if (!response.ok) throw new Error('Failed to delete')
-    
+
+    if (!response.ok) { throw new Error('Failed to delete') }
+
     console.log('✅ User deleted:', firstUser.id)
     await testAPI()
   } catch (e) {
