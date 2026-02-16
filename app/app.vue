@@ -17,100 +17,17 @@
       <NuxtPage />
     </main>
 
-    <div id="notifications"></div>
+    <div id="notifications" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted } from 'vue'
 
 onMounted(() => {
   if (import.meta.dev) {
     console.log('🚀 App mounted, MSW should be running')
   }
 })
+
 </script>
-
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-  background: #f9fafb;
-  color: #111827;
-  line-height: 1.5;
-}
-
-.nav {
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 1rem 2rem;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.nav-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.nav-logo {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #3b82f6;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.nav-logo:hover {
-  color: #2563eb;
-}
-
-.nav-links {
-  display: flex;
-  gap: 2rem;
-}
-
-.nav-link {
-  color: #6b7280;
-  text-decoration: none;
-  padding: 0.5rem 0;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-}
-
-.nav-link:hover {
-  color: #3b82f6;
-  border-bottom-color: #3b82f6;
-}
-
-.nav-link--active {
-  color: #3b82f6;
-  border-bottom-color: #3b82f6;
-  font-weight: 500;
-}
-
-.main {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 2rem;
-}
-
-.page-enter-active,
-.page-leave-active {
-  transition: opacity 0.3s;
-}
-
-.page-enter,
-.page-leave-to {
-  opacity: 0;
-}
-</style>

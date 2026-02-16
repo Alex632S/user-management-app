@@ -7,7 +7,10 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "lint": "eslint . --ext .vue,.js,.ts --fix",
+    "test": "echo 'Add tests later'",
+    "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@pinia/nuxt": "^0.11.3",
@@ -25,12 +28,14 @@
   "devDependencies": {
     "@faker-js/faker": "^10.3.0",
     "@mswjs/data": "^0.16.2",
+    "@nuxtjs/eslint-config-typescript": "^12.1.0",
     "@types/node": "^25.2.3",
-    "vite": "^5.2.0",
+    "eslint": "^8.57.0",
     "msw": "^2.12.10",
     "openapi-typescript": "^7.13.0",
     "sass": "^1.97.3",
     "typescript": "^5.9.3",
+    "vite": "^5.2.0",
     "vue-tsc": "^3.2.4"
   },
   "msw": {
