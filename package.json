@@ -12,10 +12,11 @@
   "dependencies": {
     "@pinia/nuxt": "^0.11.3",
     "@vee-validate/nuxt": "^4.15.1",
+    "@vee-validate/yup": "^4.15.1",
     "nuxt": "^4.3.1",
     "openapi-fetch": "^0.17.0",
     "pinia": "^3.0.4",
-    "pinia-plugin-persistedstate": "^4.7.1",
+    "pinia-plugin-persistedstate": "^4.0.0",
     "vee-validate": "^4.15.1",
     "vue": "^3.5.28",
     "vue-router": "^4.6.4",
@@ -24,8 +25,17 @@
   "devDependencies": {
     "@faker-js/faker": "^10.3.0",
     "@mswjs/data": "^0.16.2",
+    "@types/node": "^25.2.3",
+    "vite": "^5.2.0",
     "msw": "^2.12.10",
     "openapi-typescript": "^7.13.0",
-    "sass": "^1.97.3"
+    "sass": "^1.97.3",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.2.4"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }
