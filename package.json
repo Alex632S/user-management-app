@@ -30,7 +30,7 @@
     "@mswjs/data": "^0.16.2",
     "@nuxtjs/eslint-config-typescript": "^12.1.0",
     "@types/node": "^25.2.3",
-    "eslint": "^10.0.0",
+    "eslint": "^8.57.0",
     "msw": "^2.12.10",
     "openapi-typescript": "^7.13.0",
     "sass": "^1.97.3",

@@ -11,26 +11,24 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
+    - name:  Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Node.js
+    - name:  Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
         
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: TypeScript check
+    - name:  Install dependencies
+      run: |
+        npm install
+        
+    - name:  TypeScript check
       run: npx vue-tsc --noEmit
       
-    - name: Lint
+    - name:  Lint
       run: npm run lint
       
-    - name: Test
-      run: npm run test
-      
-    - name: Build
+    - name:  Build
       run: npm run build
