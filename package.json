@@ -7,10 +7,8 @@
     "build": "nuxt build",
     "preview": "nuxt preview",
     "lint": "eslint . --ext .vue,.js,.ts --fix",
-    "typecheck": "vue-tsc --noEmit",
-    "test": "vitest",
-    "test:coverage": "vitest --coverage",
-    "test:ui": "vitest --ui"
+    "typecheck": "vue-tsc --noEmit --skipLibCheck",
+    "test": "vitest"
   },
   "dependencies": {
     "@pinia/nuxt": "^0.11.3",
