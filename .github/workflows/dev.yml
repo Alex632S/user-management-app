@@ -10,7 +10,7 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
-      cache-key: ${{ steps.cache.outputs.cache-key }}
+      cache-key: ${{ steps.cache-key.outputs.key }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,19 +20,19 @@ jobs:
         with:
           node-version: '20'
           
-      - name: Get cache key
-        id: cache
-        run: echo "cache-key=${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}" >> $GITHUB_OUTPUT
+      - name: Generate cache key
+        id: cache-key
+        run: echo "key=${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}" >> $GITHUB_OUTPUT
         
       - name: Cache dependencies
         uses: actions/cache@v4
-        id: cache-restore
+        id: cache
         with:
           path: node_modules
-          key: ${{ steps.cache.outputs.cache-key }}
+          key: ${{ steps.cache-key.outputs.key }}
           
       - name: Install dependencies
-        if: steps.cache-restore.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit != 'true'
         run: npm install --legacy-peer-deps
         
       - name: Generate Nuxt types
