@@ -12,18 +12,16 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        
     - name: Install dependencies
       run: npm install --legacy-peer-deps
-      
+    - name: Generate Nuxt types
+      run: npx nuxt prepare
     - name: TypeScript check
       run: npx vue-tsc --noEmit
-      
     - name: ESLint
       run: npm run lint
 
@@ -32,15 +30,14 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        
     - name: Install dependencies
       run: npm install --legacy-peer-deps
-      
+    - name: Generate Nuxt types
+      run: npx nuxt prepare
     - name: Run tests
       run: npm run test
 
@@ -49,14 +46,13 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        
     - name: Install dependencies
       run: npm install --legacy-peer-deps
-      
+    - name: Generate Nuxt types
+      run: npx nuxt prepare
     - name: Build project
       run: npm run build
