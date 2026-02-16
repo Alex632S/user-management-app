@@ -9,6 +9,8 @@ on:
 jobs:
   setup:
     runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,17 +20,23 @@ jobs:
         with:
           node-version: '20'
           
+      - name: Generate cache key
+        id: cache-key
+        run: echo "key=${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}" >> $GITHUB_OUTPUT
+        
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: node_modules
+          key: ${{ steps.cache-key.outputs.key }}
+          
       - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
         run: npm install --legacy-peer-deps
         
       - name: Generate Nuxt types
         run: npx nuxt prepare
-        
-      - name: Upload node_modules
-        uses: actions/upload-artifact@v4
-        with:
-          name: node_modules
-          path: node_modules
 
   lint:
     needs: setup
@@ -37,11 +45,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Download node_modules
-        uses: actions/download-artifact@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          name: node_modules
+          node-version: '20'
+          
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
           path: node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+          
+      - name: Generate Nuxt types
+        run: npx nuxt prepare
         
       - name: TypeScript check
         run: npx vue-tsc --noEmit --skipLibCheck
@@ -56,12 +72,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Download node_modules
-        uses: actions/download-artifact@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          name: node_modules
+          node-version: '20'
+          
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
           path: node_modules
-        
+          key: ${{ needs.setup.outputs.cache-key }}
+          
       - name: Generate Nuxt types
         run: npx nuxt prepare
         
@@ -75,12 +96,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Download node_modules
-        uses: actions/download-artifact@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          name: node_modules
+          node-version: '20'
+          
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
           path: node_modules
-        
+          key: ${{ needs.setup.outputs.cache-key }}
+          
       - name: Generate Nuxt types
         run: npx nuxt prepare
         

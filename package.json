@@ -8,7 +8,7 @@
     "preview": "nuxt preview",
     "lint": "eslint . --ext .vue,.js,.ts --fix",
     "typecheck": "vue-tsc --noEmit --skipLibCheck",
-    "test": "vitest"
+    "test": "vitest --run"
   },
   "dependencies": {
     "@pinia/nuxt": "^0.11.3",
