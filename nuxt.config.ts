@@ -1,5 +1,31 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
+import { defineNuxtConfig } from 'nuxt/config'
+
 export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
-  devtools: { enabled: true }
+  devtools: { enabled: true },
+  
+  srcDir: 'app/',
+  
+  typescript: {
+    strict: true,
+    typeCheck: true,
+    shim: false,
+    tsConfig: {
+      compilerOptions: {
+        moduleResolution: 'bundler',
+        types: ['node', 'vite/client'],
+        paths: {
+          '~/*': ['../*'],
+          '@/*': ['./*']
+        }
+      }
+    }
+  },
+  
+  // Добавляем alias
+  alias: {
+    '~': '../',
+    '@': './'
+  },
+  
+  compatibilityDate: '2025-02-16'
 })
