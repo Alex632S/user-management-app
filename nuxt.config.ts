@@ -2,9 +2,9 @@ import { defineNuxtConfig } from 'nuxt/config'
 
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  
+
   srcDir: 'app/',
-  
+
   typescript: {
     strict: true,
     typeCheck: true,
@@ -20,12 +20,12 @@ export default defineNuxtConfig({
       }
     }
   },
-  
+
   // Добавляем alias
   alias: {
     '~': '../',
     '@': './'
   },
-  
+
   compatibilityDate: '2025-02-16'
 })

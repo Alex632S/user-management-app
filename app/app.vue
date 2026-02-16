@@ -17,12 +17,12 @@
       <NuxtPage />
     </main>
 
-    <div id="notifications"></div>
+    <div id="notifications" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted } from 'vue'
 
 onMounted(() => {
   if (import.meta.dev) {
