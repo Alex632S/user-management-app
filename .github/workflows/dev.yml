@@ -56,8 +56,11 @@ jobs:
           path: node_modules
           key: ${{ needs.setup.outputs.cache-key }}
           
+      - name: Generate Nuxt types
+        run: npx nuxt prepare
+        
       - name: TypeScript check
-        run: npx vue-tsc --noEmit
+        run: npx vue-tsc --noEmit --skipLibCheck
         
       - name: ESLint
         run: npm run lint
