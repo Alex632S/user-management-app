@@ -162,50 +162,31 @@ jobs:
           if-no-files-found: warn
 
   deploy:
-    needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [lint-and-typecheck, test]
+    if: github.ref == 'refs/heads/main'
+    
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          name: dist-${{ github.run_id }}
-          path: ./output
-          
-      - name: List downloaded files
-        run: |
-          echo "=== Скачанные артефакты ==="
-          echo "Содержимое ./output:"
-          ls -la ./output/
-          echo ""
-          echo "Поиск файлов сборки:"
-          find ./output -type f -name "*" | head -20
-          
-      - name: Deploy to production
-        run: |
-          echo "=== Начало деплоя ==="
-          
-          # Определяем где лежит сборка
-          if [ -d "./output/.output" ]; then
-            echo "Использую .output директорию"
-            cd ./output/.output
-          elif [ -d "./output/dist" ]; then
-            echo "Использую dist директорию"
-            cd ./output/dist
-          elif [ -d "./output/.nuxt" ]; then
-            echo "Использую .nuxt директорию"
-            cd ./output/.nuxt
-          else
-            echo " Использую корень артефактов"
-            cd ./output
-          fi
-          
-          echo "Текущая директория для деплоя:"
-          pwd
-          echo "Содержимое:"
-          ls -la
-          
-          echo ""
-          echo "Деплой завершен успешно"
-          # Здесь добавьте команду деплоя, например:
-          # npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Nuxt application
+        run: npm run build
+        env:
+          NITRO_PRESET: cloudflare-pages
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy .output/public --project-name=your-project-name
