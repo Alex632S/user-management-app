@@ -120,9 +120,10 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist
+          name: dist-${{ github.run_id }}
           path: .output
           retention-days: 7
+          if-no-files-found: error
 
   deploy:
     needs: build
@@ -132,11 +133,15 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: dist
+          name: dist-${{ github.run_id }}
           path: .output
+          
+      - name: List downloaded files
+        run: ls -la .output/
           
       - name: Deploy to production
         run: |
           echo "Deploying to production..."
+          echo "Build artifacts downloaded successfully"
           # Добавьте команду деплоя
-          # npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
+          # npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --cwd .output
