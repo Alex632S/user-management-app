@@ -170,34 +170,34 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist-${{ github.run_id }}
-          path: ./artifacts
+          path: ./output
           
       - name: List downloaded files
         run: |
           echo "=== Скачанные артефакты ==="
-          echo "Содержимое ./artifacts:"
-          ls -la ./artifacts/
+          echo "Содержимое ./output:"
+          ls -la ./output/
           echo ""
           echo "Поиск файлов сборки:"
-          find ./artifacts -type f -name "*" | head -20
+          find ./output -type f -name "*" | head -20
           
       - name: Deploy to production
         run: |
           echo "=== Начало деплоя ==="
           
           # Определяем где лежит сборка
-          if [ -d "./artifacts/.output" ]; then
+          if [ -d "./output/.output" ]; then
             echo "Использую .output директорию"
-            cd ./artifacts/.output
-          elif [ -d "./artifacts/dist" ]; then
+            cd ./output/.output
+          elif [ -d "./output/dist" ]; then
             echo "Использую dist директорию"
-            cd ./artifacts/dist
-          elif [ -d "./artifacts/.nuxt" ]; then
+            cd ./output/dist
+          elif [ -d "./output/.nuxt" ]; then
             echo "Использую .nuxt директорию"
-            cd ./artifacts/.nuxt
+            cd ./output/.nuxt
           else
             echo " Использую корень артефактов"
-            cd ./artifacts
+            cd ./output
           fi
           
           echo "Текущая директория для деплоя:"
