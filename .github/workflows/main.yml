@@ -120,104 +120,63 @@ jobs:
       - name: Check build output
         run: |
           echo "=== Проверка директорий после сборки ==="
-          echo "Текущая директория:"
-          pwd
+          echo "Содержимое .output:"
+          ls -la .output/ || echo ".output не найден"
           echo ""
-          echo "Содержимое корня проекта:"
-          ls -la
-          echo ""
-          echo "Проверка .output:"
-          if [ -d ".output" ]; then
-            echo "✅ .output существует"
-            ls -la .output/
-          else
-            echo "❌ .output не найден"
-          fi
-          echo ""
-          echo "Проверка dist:"
-          if [ -d "dist" ]; then
-            echo "✅ dist существует"
-            ls -la dist/
-          else
-            echo "❌ dist не найден"
-          fi
-          echo ""
-          echo "Проверка .nuxt:"
-          if [ -d ".nuxt" ]; then
-            echo "✅ .nuxt существует"
-            ls -la .nuxt/
-          else
-            echo "❌ .nuxt не найден"
-          fi
-          
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: nuxt-build  # ⬅️ ФИКСИРОВАННОЕ ИМЯ
-          path: |
-            .output
-            .nuxt
-            dist
-          retention-days: 7
-          if-no-files-found: error  # ⬅️ МЕНЯЕМ НА error, чтобы видеть ошибку сразу
-
-  build:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          
-      - name: Restore cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-          
-      - name: Generate Nuxt types
-        run: npx nuxt prepare
-        
-      - name: Build project
-        run: npm run build
-        
-      - name: Check build output
-        run: |
-          echo "=== Проверка директорий после сборки ==="
-          echo "Текущая директория:"
-          pwd
-          echo ""
-          echo "Содержимое корня проекта:"
-          ls -la
-          echo ""
-          echo "Проверка .output:"
-          if [ -d ".output" ]; then
-            echo "✅ .output существует"
-            ls -la .output/
-          else
-            echo "❌ .output не найден"
-          fi
-          echo ""
-          echo "Проверка .nuxt:"
-          if [ -d ".nuxt" ]; then
-            echo "✅ .nuxt существует"
-            ls -la .nuxt/
-          else
-            echo "❌ .nuxt не найден"
-          fi
+          echo "Содержимое .nuxt:"
+          ls -la .nuxt/ || echo ".nuxt не найден"
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: nuxt-build
-          path: | # ⬅️ ВАЖНО: используйте символ | для многострочного значения
+          path: |
             .output
             .nuxt
           retention-days: 7
           if-no-files-found: error
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nuxt-build
+          path: ./output
+          
+      - name: List downloaded files
+        run: |
+          echo "=== Скачанные артефакты ==="
+          echo "Содержимое ./output:"
+          ls -la ./output/
+          echo ""
+          echo "Содержимое ./output/.output:"
+          ls -la ./output/.output/ || echo "Нет .output"
+          echo ""
+          echo "Содержимое ./output/.nuxt:"
+          ls -la ./output/.nuxt/ || echo "Нет .nuxt"
+          
+      - name: Deploy to production
+        run: |
+          echo "=== Начало деплоя ==="
+          
+          # Определяем где лежит сборка
+          if [ -d "./output/.output" ]; then
+            echo "✅ Использую .output директорию"
+            cd ./output/.output
+          else
+            echo "❌ Не найдена директория .output!"
+            exit 1
+          fi
+          
+          echo "Текущая директория для деплоя:"
+          pwd
+          echo "Содержимое:"
+          ls -la
+          
+          echo ""
+          echo "✅ Деплой готов к выполнению"
+          # Здесь добавьте команду деплоя
