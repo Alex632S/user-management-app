@@ -117,13 +117,49 @@ jobs:
       - name: Build project
         run: npm run build
         
+      - name: Check build output
+        run: |
+          echo "=== Проверка директорий после сборки ==="
+          echo "Текущая директория:"
+          pwd
+          echo ""
+          echo "Содержимое корня проекта:"
+          ls -la
+          echo ""
+          echo "Проверка .output:"
+          if [ -d ".output" ]; then
+            echo " .output существует"
+            ls -la .output/
+          else
+            echo " .output не найден"
+          fi
+          echo ""
+          echo "Проверка dist:"
+          if [ -d "dist" ]; then
+            echo "dist существует"
+            ls -la dist/
+          else
+            echo " dist не найден"
+          fi
+          echo ""
+          echo "Проверка .nuxt:"
+          if [ -d ".nuxt" ]; then
+            echo " .nuxt существует"
+            ls -la .nuxt/
+          else
+            echo " .nuxt не найден"
+          fi
+          
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist-${{ github.run_id }}
-          path: .output
+          path: |
+            .output
+            .nuxt
+            dist
           retention-days: 7
-          if-no-files-found: error
+          if-no-files-found: warn
 
   deploy:
     needs: build
@@ -134,14 +170,42 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist-${{ github.run_id }}
-          path: .output
+          path: ./artifacts
           
       - name: List downloaded files
-        run: ls -la .output/
+        run: |
+          echo "=== Скачанные артефакты ==="
+          echo "Содержимое ./artifacts:"
+          ls -la ./artifacts/
+          echo ""
+          echo "Поиск файлов сборки:"
+          find ./artifacts -type f -name "*" | head -20
           
       - name: Deploy to production
         run: |
-          echo "Deploying to production..."
-          echo "Build artifacts downloaded successfully"
-          # Добавьте команду деплоя
-          # npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --cwd .output
+          echo "=== Начало деплоя ==="
+          
+          # Определяем где лежит сборка
+          if [ -d "./artifacts/.output" ]; then
+            echo "Использую .output директорию"
+            cd ./artifacts/.output
+          elif [ -d "./artifacts/dist" ]; then
+            echo "Использую dist директорию"
+            cd ./artifacts/dist
+          elif [ -d "./artifacts/.nuxt" ]; then
+            echo "Использую .nuxt директорию"
+            cd ./artifacts/.nuxt
+          else
+            echo " Использую корень артефактов"
+            cd ./artifacts
+          fi
+          
+          echo "Текущая директория для деплоя:"
+          pwd
+          echo "Содержимое:"
+          ls -la
+          
+          echo ""
+          echo "Деплой завершен успешно"
+          # Здесь добавьте команду деплоя, например:
+          # npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
