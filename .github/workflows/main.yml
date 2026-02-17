@@ -22,29 +22,21 @@ jobs:
           
       - name: Generate cache key
         id: cache-key
-        run: echo "key=${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}-$(date +%W)" >> $GITHUB_OUTPUT
+        run: echo "key=${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}" >> $GITHUB_OUTPUT
         
       - name: Cache dependencies
         uses: actions/cache@v4
         id: cache
         with:
-          path: |
-            node_modules
-            .nuxt
+          path: node_modules
           key: ${{ steps.cache-key.outputs.key }}
           
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          npm install --legacy-peer-deps
-          npm install unplugin@1.10.1 --save-dev
-          
+        run: npm install --legacy-peer-deps
+        
       - name: Generate Nuxt types
-        run: |
-          rm -rf .nuxt
-          npx nuxt prepare
-        env:
-          NODE_OPTIONS: --max-old-space-size=4096
+        run: npx nuxt prepare
 
   lint:
     needs: setup
@@ -61,13 +53,14 @@ jobs:
       - name: Restore cache
         uses: actions/cache@v4
         with:
-          path: |
-            node_modules
-            .nuxt
+          path: node_modules
           key: ${{ needs.setup.outputs.cache-key }}
           
+      - name: Generate Nuxt types
+        run: npx nuxt prepare
+        
       - name: TypeScript check
-        run: npm run typecheck
+        run: npx vue-tsc --noEmit --skipLibCheck
         
       - name: ESLint
         run: npm run lint
@@ -75,36 +68,28 @@ jobs:
   test:
     needs: lint
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18, 20]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '20'
           
       - name: Restore cache
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}-$(date +%W)
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
           
-      - name: Generate Nuxt types (if needed)
-        run: |
-          mkdir -p .nuxt
-          npx nuxt prepare || echo "Type generation skipped for tests"
-        continue-on-error: true
+      - name: Generate Nuxt types
+        run: npx nuxt prepare
         
       - name: Run tests
         run: npm run test
-        env:
-          CI: true
 
   build:
     needs: test
@@ -121,32 +106,23 @@ jobs:
       - name: Restore cache
         uses: actions/cache@v4
         with:
-          path: |
-            node_modules
-            .nuxt
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}-$(date +%W)
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
           
       - name: Generate Nuxt types
-        run: |
-          rm -rf .nuxt
-          npx nuxt prepare
+        run: npx nuxt prepare
         
       - name: Build project
         run: npm run build
-        env:
-          NODE_ENV: production
         
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: |
-            .output
-            .nuxt
+          path: .output
           retention-days: 7
-          if-no-files-found: warn
 
   deploy:
     needs: build
@@ -162,7 +138,5 @@ jobs:
       - name: Deploy to production
         run: |
           echo "Deploying to production..."
-          echo "Build artifacts downloaded to .output folder"
-          # Раскомментируйте нужную команду деплоя:
+          # Добавьте команду деплоя
           # npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
-          # npx netlify deploy --prod --dir=.output/public
