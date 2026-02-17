@@ -128,38 +128,40 @@ jobs:
           echo ""
           echo "Проверка .output:"
           if [ -d ".output" ]; then
-            echo " .output существует"
+            echo "✅ .output существует"
             ls -la .output/
           else
-            echo " .output не найден"
+            echo "❌ .output не найден"
           fi
           echo ""
           echo "Проверка dist:"
           if [ -d "dist" ]; then
-            echo "dist существует"
+            echo "✅ dist существует"
             ls -la dist/
           else
-            echo " dist не найден"
+            echo "❌ dist не найден"
           fi
           echo ""
           echo "Проверка .nuxt:"
           if [ -d ".nuxt" ]; then
-            echo " .nuxt существует"
+            echo "✅ .nuxt существует"
             ls -la .nuxt/
           else
-            echo " .nuxt не найден"
+            echo "❌ .nuxt не найден"
           fi
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist-${{ github.run_id }}
+          # ИЗМЕНЕНО: используем простое постоянное имя вместо run_id
+          name: production-build
           path: |
             .output
             .nuxt
             dist
           retention-days: 7
-          if-no-files-found: warn
+          # ИЗМЕНЕНО: если файлов нет - пусть пайплайн упадет здесь
+          if-no-files-found: error
 
   deploy:
     needs: build
@@ -169,7 +171,8 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: dist-${{ github.run_id }}
+          # ИЗМЕНЕНО: используем то же простое имя
+          name: production-build
           path: ./artifacts
           
       - name: List downloaded files
@@ -187,25 +190,37 @@ jobs:
           
           # Определяем где лежит сборка
           if [ -d "./artifacts/.output" ]; then
-            echo "Использую .output директорию"
-            cd ./artifacts/.output
+            echo "✅ Использую .output директорию"
+            DEPLOY_PATH="./artifacts/.output"
           elif [ -d "./artifacts/dist" ]; then
-            echo "Использую dist директорию"
-            cd ./artifacts/dist
+            echo "✅ Использую dist директорию"
+            DEPLOY_PATH="./artifacts/dist"
           elif [ -d "./artifacts/.nuxt" ]; then
-            echo "Использую .nuxt директорию"
-            cd ./artifacts/.nuxt
+            echo "✅ Использую .nuxt директорию"
+            DEPLOY_PATH="./artifacts/.nuxt"
           else
-            echo " Использую корень артефактов"
-            cd ./artifacts
+            echo "⚠️ Использую корень артефактов"
+            DEPLOY_PATH="./artifacts"
           fi
           
-          echo "Текущая директория для деплоя:"
-          pwd
+          echo "Директория для деплоя: $DEPLOY_PATH"
           echo "Содержимое:"
-          ls -la
+          ls -la $DEPLOY_PATH
+          
+          # ДОБАВЛЕНО: проверяем наличие index.html или server.js для уверенности
+          if [ -f "$DEPLOY_PATH/public/index.html" ] || [ -f "$DEPLOY_PATH/index.html" ] || [ -f "$DEPLOY_PATH/server/index.mjs" ]; then
+            echo "✅ Найдены файлы сборки"
+          else
+            echo "⚠️ Не найдены ожидаемые файлы сборки"
+          fi
           
           echo ""
-          echo "Деплой завершен успешно"
+          echo "Деплой готов к выполнению"
+          echo "Переходим в директорию и выполняем деплой..."
+          cd $DEPLOY_PATH
+          pwd
+          
           # Здесь добавьте команду деплоя, например:
           # npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
+          
+          echo "✅ Деплой завершен успешно"
