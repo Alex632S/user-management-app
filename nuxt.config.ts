@@ -11,7 +11,8 @@ export default defineNuxtConfig({
     shim: false,
     tsConfig: {
       compilerOptions: {
-        moduleResolution: 'bundler',
+        module: 'ESNext',
+        moduleResolution: 'Bundler',
         types: ['node', 'vite/client'],
         paths: {
           '~/*': ['../*'],
@@ -21,7 +22,6 @@ export default defineNuxtConfig({
     }
   },
 
-  // Добавляем alias
   alias: {
     '~': '../',
     '@': './'
