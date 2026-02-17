@@ -117,7 +117,7 @@ jobs:
       - name: Build project
         run: npm run build
         
-            - name: Check build output
+      - name: Check build output
         run: |
           echo "=== ПОДРОБНАЯ ПРОВЕРКА ПОСЛЕ СБОРКИ ==="
           echo "Текущая директория: $(pwd)"
