@@ -117,22 +117,31 @@ jobs:
       - name: Build project
         run: npm run build
         
-      - name: Check build output
+      - name: Prepare artifacts
         run: |
-          echo "=== Проверка директорий после сборки ==="
-          echo "Содержимое .output:"
-          ls -la .output/ || echo ".output не найден"
-          echo ""
-          echo "Содержимое .nuxt:"
-          ls -la .nuxt/ || echo ".nuxt не найден"
+          echo "=== Подготовка артефактов ==="
+          mkdir -p artifacts
+          if [ -d ".output" ]; then
+            cp -r .output artifacts/
+            echo "✅ .output скопирован"
+          else
+            echo "❌ .output не найден"
+            exit 1
+          fi
+          if [ -d ".nuxt" ]; then
+            cp -r .nuxt artifacts/
+            echo "✅ .nuxt скопирован"
+          else
+            echo "⚠️ .nuxt не найден (не критично)"
+          fi
+          echo "Содержимое artifacts:"
+          ls -la artifacts/
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: nuxt-build
-          path: |
-            .output
-            .nuxt
+          path: artifacts/
           retention-days: 7
           if-no-files-found: error
 
