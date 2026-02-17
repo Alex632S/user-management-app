@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [ main, develop ]
 
-# Добавляем concurrency чтобы отменять старые запуски при новых пушах
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -15,18 +14,15 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     
-    # Добавляем стратегию для матрицы сборки если нужно тестировать на разных версиях
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
-      # Продолжаем выполнение даже если одна версия упала
+        node-version: [18.x, 20.x, 22.x]
       fail-fast: false
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          # Загружаем всю историю для правильного линтинга
           fetch-depth: 0
       
       - name: Setup Node.js ${{ matrix.node-version }}
@@ -34,11 +30,9 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: package-lock.json
       
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
-        # Используем npm ci для более быстрой и надежной установки
       
       - name: Cache Nuxt build
         uses: actions/cache@v4
@@ -46,69 +40,120 @@ jobs:
           path: |
             .nuxt
             node_modules/.cache
-          key: ${{ runner.os }}-nuxt-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-node${{ matrix.node-version }}-nuxt-${{ hashFiles('package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-nuxt-
+            ${{ runner.os }}-node${{ matrix.node-version }}-nuxt-
       
       - name: Generate Nuxt types
         run: npx nuxt prepare
       
-      - name: TypeScript check
-        run: npx vue-tsc --noEmit --skipLibCheck
+      - name: TypeScript type check
+        run: npm run typecheck
       
       - name: ESLint
         run: npm run lint
-        continue-on-error: false
       
-      - name: Run tests
-        run: npm run test
+      - name: Run tests with coverage
+        run: npm run test -- --coverage
         env:
           CI: true
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
       
       - name: Build project
         run: npm run build
         env:
           NODE_ENV: production
-          # Добавьте другие переменные окружения для сборки
-          # API_URL: ${{ secrets.API_URL }}
+          NITRO_PRESET: node-server
       
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist-${{ matrix.node-version }}
+          name: dist-node${{ matrix.node-version }}
           path: |
             .output
             .nuxt
           retention-days: 7
           if-no-files-found: error
 
-  # Добавляем job для проверки безопасности
-  security-scan:
+  security-audit:
     runs-on: ubuntu-latest
     needs: validate
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Run npm audit
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      
+      - name: Run security audit
         run: npm audit --audit-level=moderate
         continue-on-error: true
       
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      - name: Run SAST scan
+        uses: github/codeql-action/init@v3
         with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
+          languages: javascript, typescript
       
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: 'trivy-results.sarif'
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
 
-  deploy-staging:
+  preview-deployment:
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    environment:
+      name: preview
+      url: ${{ steps.deploy.outputs.url }}
+    
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-node20.x
+          path: .output
+      
+      - name: Deploy preview to Vercel
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npx vercel deploy .output --token $VERCEL_TOKEN \
+            --scope $VERCEL_ORG_ID \
+            --yes > deployment-url.txt
+          
+          DEPLOYMENT_URL=$(cat deployment-url.txt)
+          echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          
+          echo "Preview deployed to: $DEPLOYMENT_URL"
+      
+      - name: Comment PR with preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `Preview deployment ready: ${{ steps.deploy.outputs.url }}`
+            })
+
+  staging-deployment:
     needs: validate
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
@@ -117,105 +162,144 @@ jobs:
       url: ${{ steps.deploy.outputs.url }}
     
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          name: dist-20.x
-          path: .output
+          node-version: '20.x'
+      
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      
+      - name: Generate types
+        run: npx nuxt prepare
+      
+      - name: Build for staging
+        run: npm run build
+        env:
+          NODE_ENV: staging
+          NUXT_PUBLIC_API_BASE: ${{ secrets.STAGING_API_URL }}
       
       - name: Deploy to staging
         id: deploy
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_STAGING_SITE_ID }}
         run: |
-          echo "Deploying to staging environment..."
-          # Здесь команда деплоя на staging
-          echo "url=https://staging.example.com" >> $GITHUB_OUTPUT
-      
-      - name: Run smoke tests
-        run: |
-          echo "Running smoke tests on staging..."
-          # Добавьте smoke тесты
+          npx netlify deploy --dir=.output/public --prod --message "Deploy from ${{ github.sha }}"
+          echo "url=https://staging.your-app.com" >> $GITHUB_OUTPUT
 
-  deploy-production:
-    needs: [validate, security-scan]
+  production-deployment:
+    needs: [validate, security-audit]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
     
-    # Добавляем защиту production деплоя
-    concurrency: 
+    concurrency:
       group: production-deploy
       cancel-in-progress: false
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
         with:
-          name: dist-20.x
-          path: .output
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      
+      - name: Generate types
+        run: npx nuxt prepare
+      
+      - name: Build for production
+        run: npm run build
+        env:
+          NODE_ENV: production
+          NUXT_PUBLIC_API_BASE: ${{ secrets.PRODUCTION_API_URL }}
       
       - name: Deploy to production
         id: deploy
         env:
-          # Секреты для деплоя
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          echo "Deploying to production..."
-          
-          # Пример для Vercel
           npx vercel --prod --token $VERCEL_TOKEN \
             --scope $VERCEL_ORG_ID \
             --confirm
           
-          # Пример для Netlify
-          # npx netlify deploy --prod --dir=.output/public
-          
           echo "url=https://your-app.com" >> $GITHUB_OUTPUT
       
+      - name: Create Git tag
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git tag -a "v$(date +'%Y%m%d-%H%M%S')" -m "Release from ${{ github.sha }}"
+          git push --tags
+      
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.run_number }}
-          name: Release v${{ github.run_number }}
+          tag_name: release-${{ github.run_number }}
+          name: Release ${{ github.run_number }}
           generate_release_notes: true
+          files: |
+            .output/public/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Notify on success
-        if: success()
-        uses: slackapi/slack-github-action@v1
-        with:
-          channel-id: 'deployments'
-          slack-message: '✅ Production deployment successful!'
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
   cleanup:
-    needs: [deploy-staging, deploy-production]
+    needs: [preview-deployment, staging-deployment, production-deployment]
     runs-on: ubuntu-latest
     if: always()
+    
     steps:
-      - name: Clean up old artifacts
+      - name: Delete old workflow runs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'main.yml',
+              per_page: 50
+            });
+            
+            for (const run of runs.data.workflow_runs) {
+              if (run.status === 'completed' && run.conclusion !== 'success' && run.created_at < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) {
+                await github.rest.actions.deleteWorkflowRun({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: run.id
+                });
+              }
+            }
+      
+      - name: Delete old artifacts
         uses: actions/github-script@v7
         with:
           script: |
             const artifacts = await github.rest.actions.listArtifactsForRepo({
               owner: context.repo.owner,
-              repo: context.repo.repo,
+              repo: context.repo.repo
             });
             
             for (const artifact of artifacts.data.artifacts) {
-              if (artifact.expired) {
+              if (artifact.expired || artifact.created_at < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) {
                 await github.rest.actions.deleteArtifact({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  artifact_id: artifact.id,
+                  artifact_id: artifact.id
                 });
               }
             }
