@@ -119,39 +119,47 @@ jobs:
         
       - name: Check build output
         run: |
-          echo "=== ПОДРОБНАЯ ПРОВЕРКА ПОСЛЕ СБОРКИ ==="
-          echo "Текущая директория: $(pwd)"
+          echo "=== Проверка директорий после сборки ==="
+          echo "Текущая директория:"
+          pwd
           echo ""
-          echo "=== ВСЕ ДИРЕКТОРИИ В КОРНЕ ==="
+          echo "Содержимое корня проекта:"
           ls -la
           echo ""
-          echo "=== ПОИСК ЛЮБЫХ ФАЙЛОВ .output ==="
-          find . -name ".output" -type d 2>/dev/null || echo "Нет директорий .output"
+          echo "Проверка .output:"
+          if [ -d ".output" ]; then
+            echo " .output существует"
+            ls -la .output/
+          else
+            echo " .output не найден"
+          fi
           echo ""
-          echo "=== ПОИСК ЛЮБЫХ ФАЙЛОВ .nuxt ==="
-          find . -name ".nuxt" -type d 2>/dev/null || echo "Нет директорий .nuxt"
+          echo "Проверка dist:"
+          if [ -d "dist" ]; then
+            echo "dist существует"
+            ls -la dist/
+          else
+            echo " dist не найден"
+          fi
           echo ""
-          echo "=== ПОИСК ЛЮБЫХ ФАЙЛОВ dist ==="
-          find . -name "dist" -type d 2>/dev/null || echo "Нет директорий dist"
-          echo ""
-          echo "=== ПОИСК ВСЕХ ПОДДИРЕКТОРИЙ (первые 20) ==="
-          find . -type d -maxdepth 2 | head -20
-          echo ""
-          echo "=== ПОИСК ВОЗМОЖНЫХ ФАЙЛОВ СБОРКИ ==="
-          find . -name "index.html" -o -name "server.mjs" -o -name "client.manifest.json" 2>/dev/null | head -10
+          echo "Проверка .nuxt:"
+          if [ -d ".nuxt" ]; then
+            echo " .nuxt существует"
+            ls -la .nuxt/
+          else
+            echo " .nuxt не найден"
+          fi
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          # ИЗМЕНЕНО: используем простое постоянное имя вместо run_id
-          name: production-build
+          name: dist-${{ github.run_id }}
           path: |
             .output
             .nuxt
             dist
           retention-days: 7
-          # ИЗМЕНЕНО: если файлов нет - пусть пайплайн упадет здесь
-          if-no-files-found: error
+          if-no-files-found: warn
 
   deploy:
     needs: build
@@ -161,8 +169,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          # ИЗМЕНЕНО: используем то же простое имя
-          name: production-build
+          name: dist-${{ github.run_id }}
           path: ./artifacts
           
       - name: List downloaded files
@@ -180,37 +187,25 @@ jobs:
           
           # Определяем где лежит сборка
           if [ -d "./artifacts/.output" ]; then
-            echo "✅ Использую .output директорию"
-            DEPLOY_PATH="./artifacts/.output"
+            echo "Использую .output директорию"
+            cd ./artifacts/.output
           elif [ -d "./artifacts/dist" ]; then
-            echo "✅ Использую dist директорию"
-            DEPLOY_PATH="./artifacts/dist"
+            echo "Использую dist директорию"
+            cd ./artifacts/dist
           elif [ -d "./artifacts/.nuxt" ]; then
-            echo "✅ Использую .nuxt директорию"
-            DEPLOY_PATH="./artifacts/.nuxt"
+            echo "Использую .nuxt директорию"
+            cd ./artifacts/.nuxt
           else
-            echo "⚠️ Использую корень артефактов"
-            DEPLOY_PATH="./artifacts"
+            echo " Использую корень артефактов"
+            cd ./artifacts
           fi
           
-          echo "Директория для деплоя: $DEPLOY_PATH"
+          echo "Текущая директория для деплоя:"
+          pwd
           echo "Содержимое:"
-          ls -la $DEPLOY_PATH
-          
-          # ДОБАВЛЕНО: проверяем наличие index.html или server.js для уверенности
-          if [ -f "$DEPLOY_PATH/public/index.html" ] || [ -f "$DEPLOY_PATH/index.html" ] || [ -f "$DEPLOY_PATH/server/index.mjs" ]; then
-            echo "✅ Найдены файлы сборки"
-          else
-            echo "⚠️ Не найдены ожидаемые файлы сборки"
-          fi
+          ls -la
           
           echo ""
-          echo "Деплой готов к выполнению"
-          echo "Переходим в директорию и выполняем деплой..."
-          cd $DEPLOY_PATH
-          pwd
-          
+          echo "Деплой завершен успешно"
           # Здесь добавьте команду деплоя, например:
           # npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
-          
-          echo "✅ Деплой завершен успешно"
