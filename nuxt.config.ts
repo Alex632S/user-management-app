@@ -5,6 +5,13 @@ export default defineNuxtConfig({
 
   srcDir: 'app/',
 
+
+    nitro: {
+    output: {
+      dir: '.output', 
+    }
+  },
+
   typescript: {
     strict: true,
     typeCheck: true,
@@ -20,6 +27,13 @@ export default defineNuxtConfig({
         }
       }
     }
+  },
+
+  hooks: {
+  'build:done': () => {
+    console.log('✅ Build completed! Output directories:')
+    console.log('- .output should exist')
+    console.log('- .nuxt should exist')
   },
 
   alias: {
