@@ -128,65 +128,85 @@ jobs:
           echo ""
           echo "Проверка .output:"
           if [ -d ".output" ]; then
-            echo " .output существует"
+            echo "✅ .output существует"
             ls -la .output/
           else
-            echo " .output не найден"
+            echo "❌ .output не найден"
           fi
           echo ""
           echo "Проверка dist:"
           if [ -d "dist" ]; then
-            echo "dist существует"
+            echo "✅ dist существует"
             ls -la dist/
           else
-            echo " dist не найден"
+            echo "❌ dist не найден"
           fi
           echo ""
           echo "Проверка .nuxt:"
           if [ -d ".nuxt" ]; then
-            echo " .nuxt существует"
+            echo "✅ .nuxt существует"
             ls -la .nuxt/
           else
-            echo " .nuxt не найден"
+            echo "❌ .nuxt не найден"
           fi
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist-${{ github.run_id }}
+          name: nuxt-build  # ⬅️ ФИКСИРОВАННОЕ ИМЯ
           path: |
             .output
             .nuxt
             dist
           retention-days: 7
-          if-no-files-found: warn
+          if-no-files-found: error  # ⬅️ МЕНЯЕМ НА error, чтобы видеть ошибку сразу
 
   deploy:
+    needs: build
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, test]
-    if: github.ref == 'refs/heads/main'
-    
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build Nuxt application
-        run: npm run build
-        env:
-          NITRO_PRESET: cloudflare-pages
-
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy .output/public --project-name=your-project-name
+          name: nuxt-build  # ⬅️ ФИКСИРОВАННОЕ ИМЯ
+          path: ./output
+          
+      - name: List downloaded files
+        run: |
+          echo "=== Скачанные артефакты ==="
+          echo "Содержимое ./output:"
+          ls -la ./output/
+          echo ""
+          echo "Поиск файлов сборки:"
+          find ./output -type f -name "*" | head -20
+          
+      - name: Determine build directory and deploy
+        run: |
+          echo "=== Начало деплоя ==="
+          
+          # Определяем где лежит сборка
+          if [ -d "./output/.output" ]; then
+            echo "✅ Использую .output директорию"
+            BUILD_DIR="./output/.output"
+          elif [ -d "./output/dist" ]; then
+            echo "✅ Использую dist директорию"
+            BUILD_DIR="./output/dist"
+          elif [ -d "./output/.nuxt" ]; then
+            echo "✅ Использую .nuxt директорию"
+            BUILD_DIR="./output/.nuxt"
+          else
+            echo "❌ Не найдена директория со сборкой!"
+            echo "Содержимое ./output:"
+            ls -la ./output/
+            exit 1
+          fi
+          
+          echo "Текущая директория для деплоя: $BUILD_DIR"
+          echo "Содержимое:"
+          ls -la $BUILD_DIR
+          
+          echo ""
+          echo "✅ Деплой готов к выполнению"
+          # Здесь добавьте команду деплоя, например:
+          # npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
