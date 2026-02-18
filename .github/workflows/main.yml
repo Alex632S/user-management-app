@@ -29,7 +29,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'  # Встроенное кеширование npm
+          cache: 'npm'
           
       - name: Save Node version
         id: node-version
@@ -330,7 +330,6 @@ jobs:
         with:
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
-          body_path: dist/CHANGELOG.md
           generate_release_notes: true
           prerelease: false
         env:
