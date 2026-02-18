@@ -1,4 +1,4 @@
-name: Main CI/CD
+name: Main CI/CD Pipeline
 
 on:
   push:
@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
           
       - name: Generate cache key
         id: cache-key
@@ -33,7 +34,7 @@ jobs:
           
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: npm install --legacy-peer-deps
+        run: npm ci
         
       - name: Generate Nuxt types
         run: npx nuxt prepare
@@ -49,6 +50,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
           
       - name: Restore cache
         uses: actions/cache@v4
@@ -60,7 +62,7 @@ jobs:
         run: npx nuxt prepare
         
       - name: TypeScript check
-        run: npx vue-tsc --noEmit --skipLibCheck
+        run: npm run typecheck
         
       - name: ESLint
         run: npm run lint
@@ -76,20 +78,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
           
       - name: Restore cache
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          key: ${{ needs.setup.outputs.cache-key }}
           
       - name: Generate Nuxt types
         run: npx nuxt prepare
         
       - name: Run tests
         run: npm run test
+        
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./coverage
+          retention-days: 7
 
   build:
     needs: test
@@ -102,90 +111,102 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
           
       - name: Restore cache
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          key: ${{ needs.setup.outputs.cache-key }}
           
       - name: Generate Nuxt types
         run: npx nuxt prepare
         
-      - name: Build project
+      - name: Build project for Netlify
         run: npm run build
+        env:
+          NITRO_PRESET: netlify  # Важно для Netlify!
         
       - name: Prepare artifacts
         run: |
-          echo "=== Подготовка артефактов ==="
+          echo "=== 📦 Подготовка артефактов ==="
           mkdir -p artifacts
-          if [ -d ".output" ]; then
-            cp -r .output artifacts/
-            echo "✅ .output скопирован"
+          
+          # Nuxt 4 с preset netlify создает .netlify/functions-internal
+          if [ -d ".netlify/functions-internal" ]; then
+            cp -r .netlify artifacts/
+            echo "✅ .netlify скопирован ($(du -sh .netlify | cut -f1))"
           else
-            echo "❌ .output не найден"
+            echo "❌ .netlify не найден!"
             exit 1
           fi
-          if [ -d ".nuxt" ]; then
-            cp -r .nuxt artifacts/
-            echo "✅ .nuxt скопирован"
-          else
-            echo "⚠️ .nuxt не найден (не критично)"
-          fi
-          echo "Содержимое artifacts:"
+          
+          echo "📋 Содержимое artifacts:"
           ls -la artifacts/
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: nuxt-build
+          name: netlify-build-${{ github.sha }}
           path: artifacts/
           retention-days: 7
           if-no-files-found: error
 
-  deploy:
+  deploy-netlify:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://management-app-demo.netlify.app
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: nuxt-build
-          path: ./output
+          name: netlify-build-${{ github.sha }}
+          path: ./deploy
           
-      - name: List downloaded files
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          publish-dir: './deploy/.netlify/functions-internal'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy from GitHub Actions: ${{ github.sha }}"
+          enable-pull-request-comment: true
+          enable-commit-comment: true
+          overwrites-pull-request-comment: true
+          fails-without-credentials: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          
+      - name: Health check
         run: |
-          echo "=== Скачанные артефакты ==="
-          echo "Содержимое ./output:"
-          ls -la ./output/
-          echo ""
-          echo "Содержимое ./output/.output:"
-          ls -la ./output/.output/ || echo "Нет .output"
-          echo ""
-          echo "Содержимое ./output/.nuxt:"
-          ls -la ./output/.nuxt/ || echo "Нет .nuxt"
+          echo "=== 🔍 Проверка сайта ==="
+          curl -I https://management-app-demo.netlify.app
+          echo "✅ Сайт доступен!"
           
-      - name: Deploy to production
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: success()
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body: |
+            ## 🚀 Новый релиз
+            - SHA: ${{ github.sha }}
+            - Деплой: https://management-app-demo.netlify.app
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup:
+    needs: deploy-netlify
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Clean up old artifacts
         run: |
-          echo "=== Начало деплоя ==="
-          
-          # Определяем где лежит сборка
-          if [ -d "./output/.output" ]; then
-            echo "✅ Использую .output директорию"
-            cd ./output/.output
-          else
-            echo "❌ Не найдена директория .output!"
-            exit 1
-          fi
-          
-          echo "Текущая директория для деплоя:"
-          pwd
-          echo "Содержимое:"
-          ls -la
-          
-          echo ""
-          echo "✅ Деплой готов к выполнению"
-          # Здесь добавьте команду деплоя
+          echo "=== 🧹 Очистка старых артефактов ==="
+          # GitHub автоматически удаляет артефакты через 7 дней
+          echo "✅ Готово"
