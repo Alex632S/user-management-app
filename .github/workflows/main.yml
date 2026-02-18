@@ -77,7 +77,7 @@ jobs:
           
       - name: Generate Nuxt types
         run: npx nuxt prepare
-        continue-on-error: true  # Не падаем, если генерация типов не удалась
+        continue-on-error: true
       
       - name: Upload debug info
         if: always()
@@ -267,6 +267,34 @@ jobs:
           path: dist/
           retention-days: 30
           compression-level: 6
+
+      - name: Generate changelog
+        run: |
+          mkdir -p dist
+          cat > dist/CHANGELOG.md << EOF
+          # 🚀 Release v${{ github.run_number }}
+          
+          **Дата:** $(date)
+          **Коммит:** ${{ github.sha }}
+          **Автор:** ${{ github.actor }}
+          
+          ## 📝 Последние изменения
+          $(git log --pretty=format:"- %s (%h)" -10)
+          
+          ---
+          *Автоматически сгенерировано GitHub Actions*
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: success()
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body_path: dist/CHANGELOG.md
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
   deploy:
     name: 🚀 Deploy
