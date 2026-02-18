@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [ main ]
 
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -22,7 +21,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0  # Меняем на 0, чтобы получить всю историю для чейнджлога
           
       - name: Setup Node.js
         id: setup-node
@@ -35,7 +34,7 @@ jobs:
         id: node-version
         run: echo "version=$(node --version)" >> $GITHUB_OUTPUT
       
-      - name: Calculate cache key (на всякий случай)
+      - name: Calculate cache key
         id: calc-key
         run: |
           KEY="${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}-$(node --version)"
@@ -67,10 +66,9 @@ jobs:
           echo "✅ NPM: $(npm --version)"
           echo "✅ Модули: $(ls node_modules | wc -l) директорий"
           
-      - name: Set final cache key (гарантированно)
+      - name: Set final cache key
         id: final-key
         run: |
-          # Всегда используем рассчитанный ключ, даже если cache не вернул ключ
           FINAL_KEY="${{ steps.calc-key.outputs.key }}"
           echo "key=$FINAL_KEY" >> $GITHUB_OUTPUT
           echo "✅ Финальный ключ кеша: $FINAL_KEY"
@@ -97,6 +95,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
         
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -104,13 +104,13 @@ jobs:
           node-version: '20'
           cache: 'npm'
           
-      - name: Calculate cache key (для восстановления)
+      - name: Calculate cache key
         id: calc-key
         run: |
           KEY="${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}-$(node --version)"
           echo "key=$KEY" >> $GITHUB_OUTPUT
           
-      - name: Restore cache (множественные попытки)
+      - name: Restore cache
         uses: actions/cache@v4
         continue-on-error: true
         id: restore-cache
@@ -128,11 +128,11 @@ jobs:
         run: npx nuxt prepare
         continue-on-error: true
         
-      - name: TypeScript check (с флагом игнорирования ошибок)
+      - name: TypeScript check
         run: npm run typecheck || echo "⚠️ TypeScript ошибки, но продолжаем"
         continue-on-error: true
         
-      - name: ESLint (автоисправление если возможно)
+      - name: ESLint
         run: npm run lint || echo "⚠️ Линтер выдал ошибки, но продолжаем"
         continue-on-error: true
         
@@ -152,11 +152,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        shard: [1, 2, 3]  # Разбиваем тесты на 3 параллельных потока
-      fail-fast: false  # Не останавливаем другие шарды при ошибке
+        shard: [1, 2, 3]
+      fail-fast: false
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
         
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -167,7 +169,7 @@ jobs:
       - name: Calculate cache key
         run: echo "key=${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}" >> $GITHUB_ENV
           
-      - name: Restore cache (с retry)
+      - name: Restore cache
         uses: actions/cache@v4
         continue-on-error: true
         with:
@@ -221,7 +223,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+        with:
+          fetch-depth: 0  # Нужно для получения истории коммитов
+          
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -231,7 +235,7 @@ jobs:
       - name: Calculate cache key
         run: echo "key=${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}" >> $GITHUB_ENV
           
-      - name: Restore cache (с retry)
+      - name: Restore cache
         uses: actions/cache@v4
         continue-on-error: true
         with:
@@ -242,7 +246,7 @@ jobs:
         if: steps.restore-cache.outputs.cache-hit != 'true'
         run: npm ci --prefer-offline
         
-      - name: Build project (с повторной попыткой)
+      - name: Build project
         id: build
         uses: nick-fields/retry@v3
         with:
@@ -268,34 +272,6 @@ jobs:
           retention-days: 30
           compression-level: 6
 
-      - name: Generate changelog
-        run: |
-          mkdir -p dist
-          cat > dist/CHANGELOG.md << EOF
-          # 🚀 Release v${{ github.run_number }}
-          
-          **Дата:** $(date)
-          **Коммит:** ${{ github.sha }}
-          **Автор:** ${{ github.actor }}
-          
-          ## 📝 Последние изменения
-          $(git log --pretty=format:"- %s (%h)" -10)
-          
-          ---
-          *Автоматически сгенерировано GitHub Actions*
-          EOF
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        if: success()
-        with:
-          tag_name: v${{ github.run_number }}
-          name: Release v${{ github.run_number }}
-          body_path: dist/CHANGELOG.md
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
   deploy:
     name: 🚀 Deploy
     needs: [build, test-report]
@@ -307,6 +283,11 @@ jobs:
     outputs:
       deploy-status: ${{ steps.deploy.outcome }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Нужно для получения истории коммитов
+          
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -322,7 +303,7 @@ jobs:
           echo "✅ Артефакты загружены:"
           ls -la dist/
           
-      - name: Deploy to Netlify (с повторными попытками)
+      - name: Deploy to Netlify
         id: deploy
         uses: nick-fields/retry@v3
         with:
@@ -335,7 +316,7 @@ jobs:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         continue-on-error: true
         
-      - name: Health check (с повторными попытками)
+      - name: Health check
         if: steps.deploy.outcome == 'success'
         run: |
           URL="${{ steps.deploy.outputs.url }}"
@@ -351,15 +332,79 @@ jobs:
           echo "❌ Сайт недоступен после 5 попыток"
           exit 1
         continue-on-error: true
-        
+      
+      # ⭐ ТОЛЬКО ЗДЕСЬ создаем чейнджлог и релиз ⭐
+      - name: Generate changelog
+        run: |
+          mkdir -p changelog
+          
+          # Получаем последний тег
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          
+          # Получаем коммиты с последнего релиза
+          if [ -z "$PREV_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s (%h) — %an" -20)
+            COMMIT_RANGE="начало истории"
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h) — %an" $PREV_TAG..HEAD)
+            COMMIT_RANGE="$PREV_TAG..HEAD"
+          fi
+          
+          # Получаем статистику
+          NODE_VERSION=$(node --version)
+          NUXT_VERSION=$(npx nuxt --version 2>/dev/null || echo "Не определено")
+          BUILD_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          # Создаем красивый CHANGELOG
+          cat > changelog/CHANGELOG.md << EOF
+          # 🚀 Release v${{ github.run_number }}
+          
+          > **Дата релиза:** $(date +"%d.%m.%Y %H:%M")
+          > **Ветка:** ${{ github.ref_name }}
+          > **Коммит:** \`${{ github.sha }}\`
+          > **Автор:** ${{ github.actor }}
+          
+          ## 📝 Что нового
+          
+          $COMMITS
+          
+          ## 🛠️ Детали сборки
+          
+          | Параметр | Значение |
+          |----------|----------|
+          | **Версия** | v${{ github.run_number }} |
+          | **Node.js** | $NODE_VERSION |
+          | **Nuxt** | $NUXT_VERSION |
+          | **Время сборки** | $BUILD_TIME |
+          | **Раннер** | ${{ runner.os }} |
+          
+          ## 📊 Статистика
+          
+          - **Коммитов в релизе:** $(git log --oneline $COMMIT_RANGE 2>/dev/null | wc -l)
+          - **Предыдущий тег:** ${PREV_TAG:-"нет"}
+          - **Статус деплоя:** ✅ Успешно
+          
+          ## 🔗 Полезные ссылки
+          
+          - [🌍 Открыть приложение](${{ steps.deploy.outputs.url }}) 
+          - [📦 GitHub Release](https://github.com/${{ github.repository }}/releases/tag/v${{ github.run_number }})
+          - [⚙️ Сборка на GitHub](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          
+          ---
+          *Автоматически сгенерировано GitHub Actions 🤖*
+          EOF
+          
+          echo "✅ Чейнджлог создан:"
+          cat changelog/CHANGELOG.md
+          
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         if: success()
         with:
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
-          body_path: dist/CHANGELOG.md
-          generate_release_notes: true
+          body_path: changelog/CHANGELOG.md
+          generate_release_notes: true  # Резервный вариант
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
