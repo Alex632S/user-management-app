@@ -10,7 +10,7 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
-      cache-key: ${{ steps.cache-key.outputs.key }}
+      cache-key: ${{ steps.cache.outputs.cache-primary-key }}  # ✅ Правильный output
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -19,18 +19,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
           
-      - name: Generate cache key
-        id: cache-key
-        run: echo "key=${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}" >> $GITHUB_OUTPUT
-        
       - name: Cache dependencies
         uses: actions/cache@v4
-        id: cache
+        id: cache  # ✅ Важно: id для ссылки
         with:
           path: node_modules
-          key: ${{ steps.cache-key.outputs.key }}
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
           
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
@@ -50,13 +47,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
           
       - name: Restore cache
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: ${{ needs.setup.outputs.cache-key }}
+          key: ${{ needs.setup.outputs.cache-key }}  # ✅ Ключ из setup
+          restore-keys: |
+            ${{ runner.os }}-node-
           
       - name: Generate Nuxt types
         run: npx nuxt prepare
@@ -68,7 +66,7 @@ jobs:
         run: npm run lint
 
   test:
-    needs: lint
+    needs: [setup, lint]  # ✅ Зависит от setup чтобы получить ключ
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -78,13 +76,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
           
       - name: Restore cache
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: ${{ needs.setup.outputs.cache-key }}
+          key: ${{ needs.setup.outputs.cache-key }}  # ✅ Тот же ключ
+          restore-keys: |
+            ${{ runner.os }}-node-
           
       - name: Generate Nuxt types
         run: npx nuxt prepare
@@ -96,12 +95,12 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-${{ github.sha }}
           path: ./coverage
           retention-days: 7
 
   build:
-    needs: test
+    needs: [setup, test]  # ✅ Зависит от setup и test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -111,13 +110,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
           
       - name: Restore cache
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: ${{ needs.setup.outputs.cache-key }}
+          key: ${{ needs.setup.outputs.cache-key }}  # ✅ И здесь тот же ключ
+          restore-keys: |
+            ${{ runner.os }}-node-
           
       - name: Generate Nuxt types
         run: npx nuxt prepare
@@ -125,14 +125,13 @@ jobs:
       - name: Build project for Netlify
         run: npm run build
         env:
-          NITRO_PRESET: netlify  # Важно для Netlify!
+          NITRO_PRESET: netlify
         
       - name: Prepare artifacts
         run: |
           echo "=== 📦 Подготовка артефактов ==="
           mkdir -p artifacts
           
-          # Nuxt 4 с preset netlify создает .netlify/functions-internal
           if [ -d ".netlify/functions-internal" ]; then
             cp -r .netlify artifacts/
             echo "✅ .netlify скопирован ($(du -sh .netlify | cut -f1))"
@@ -140,6 +139,10 @@ jobs:
             echo "❌ .netlify не найден!"
             exit 1
           fi
+          
+          # Сохраняем package.json для информации о версии
+          cp package.json artifacts/
+          cp package-lock.json artifacts/
           
           echo "📋 Содержимое artifacts:"
           ls -la artifacts/
@@ -151,9 +154,16 @@ jobs:
           path: artifacts/
           retention-days: 7
           if-no-files-found: error
+          
+      - name: Save build info
+        run: |
+          echo "BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
+          echo "BUILD_VERSION=${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "NODE_VERSION=$(node -v)" >> $GITHUB_ENV
+          echo "NPM_VERSION=$(npm -v)" >> $GITHUB_ENV
 
   deploy-netlify:
-    needs: build
+    needs: [build, setup]  # ✅ Зависит от build и setup (для информации)
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
@@ -166,12 +176,20 @@ jobs:
           name: netlify-build-${{ github.sha }}
           path: ./deploy
           
+      - name: Inspect artifacts
+        run: |
+          echo "=== 📥 Проверка артефактов ==="
+          ls -la ./deploy/
+          echo ""
+          echo "Содержимое .netlify:"
+          ls -la ./deploy/.netlify/functions-internal/ || echo "Нет функций"
+          
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v3.0
         with:
           publish-dir: './deploy/.netlify/functions-internal'
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Deploy from GitHub Actions: ${{ github.sha }}"
+          deploy-message: "Deploy ${{ github.sha }} from GitHub Actions"
           enable-pull-request-comment: true
           enable-commit-comment: true
           overwrites-pull-request-comment: true
@@ -193,20 +211,71 @@ jobs:
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
           body: |
-            ## 🚀 Новый релиз
-            - SHA: ${{ github.sha }}
-            - Деплой: https://management-app-demo.netlify.app
+            ## 🚀 Релиз v${{ github.run_number }}
+            
+            ### Информация о сборке:
+            - **Commit:** ${{ github.sha }}
+            - **Время сборки:** ${{ env.BUILD_TIME }}
+            - **Node.js:** ${{ env.NODE_VERSION }}
+            - **npm:** ${{ env.NPM_VERSION }}
+            
+            ### Ссылки:
+            - **Сайт:** https://management-app-demo.netlify.app
+            - **GitHub:** ${{ github.server_url }}/${{ github.repository }}
+            
+            ### Что нового:
+            ${{ github.event.head_commit.message }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  cleanup:
-    needs: deploy-netlify
+  notify:
+    needs: [deploy-netlify]
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Clean up old artifacts
+      - name: Send notification
         run: |
-          echo "=== 🧹 Очистка старых артефактов ==="
-          # GitHub автоматически удаляет артефакты через 7 дней
-          echo "✅ Готово"
+          echo "=== 📢 Уведомление ==="
+          if [ "${{ needs.deploy-netlify.result }}" == "success" ]; then
+            echo "✅ Пайплайн успешно выполнен!"
+            echo "🌍 Сайт: https://management-app-demo.netlify.app"
+          else
+            echo "❌ Пайплайн упал! Проверьте логи."
+          fi
+          
+      # Здесь можно добавить отправку в Slack/Telegram
+
+  cleanup:
+    needs: [deploy-netlify, notify]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Delete old artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('=== 🧹 Очистка старых артефактов ===');
+            
+            // Получаем все артефакты
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            // Текущее время минус 7 дней
+            const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+            
+            for (const artifact of artifacts.data.artifacts) {
+              // Удаляем артефакты старше 7 дней
+              if (artifact.created_at < weekAgo) {
+                console.log(`Удаление: ${artifact.name} (${artifact.created_at})`);
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+              }
+            }
+            
+            console.log('✅ Очистка завершена');
