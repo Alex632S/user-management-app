@@ -2,10 +2,11 @@ name: Main CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [main, dev]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
+# ⚡ ВАЖНО: Даем права на создание релизов
 permissions:
   contents: write
   pull-requests: read
@@ -26,25 +27,25 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
+
       - name: Setup Node.js
         id: setup-node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          
+          node-version: "20"
+          cache: "npm"
+
       - name: Save Node version
         id: node-version
         run: echo "version=$(node --version)" >> $GITHUB_OUTPUT
-      
+
       - name: Calculate cache key
         id: calc-key
         run: |
           KEY="${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}-$(node --version)"
           echo "key=$KEY" >> $GITHUB_OUTPUT
           echo "Используем ключ: $KEY"
-          
+
       - name: Cache node_modules
         id: cache
         uses: actions/cache@v4
@@ -55,7 +56,7 @@ jobs:
           key: ${{ steps.calc-key.outputs.key }}
           restore-keys: |
             ${{ runner.os }}-node-
-            
+
       - name: Install dependencies (если нет кеша)
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -63,24 +64,24 @@ jobs:
           npm ci --prefer-offline --no-audit --no-fund
         env:
           NODE_ENV: development
-          
+
       - name: Verify installation
         run: |
           echo "✅ Node: $(node --version)"
           echo "✅ NPM: $(npm --version)"
           echo "✅ Модули: $(ls node_modules | wc -l) директорий"
-          
+
       - name: Set final cache key
         id: final-key
         run: |
           FINAL_KEY="${{ steps.calc-key.outputs.key }}"
           echo "key=$FINAL_KEY" >> $GITHUB_OUTPUT
           echo "✅ Финальный ключ кеша: $FINAL_KEY"
-          
+
       - name: Generate Nuxt types
         run: npx nuxt prepare
         continue-on-error: true
-      
+
       - name: Upload debug info
         if: always()
         uses: actions/upload-artifact@v4
@@ -101,19 +102,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          
+          node-version: "20"
+          cache: "npm"
+
       - name: Calculate cache key
         id: calc-key
         run: |
           KEY="${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}-$(node --version)"
           echo "key=$KEY" >> $GITHUB_OUTPUT
-          
+
       - name: Restore cache
         uses: actions/cache@v4
         continue-on-error: true
@@ -123,23 +124,23 @@ jobs:
           key: ${{ steps.calc-key.outputs.key }}
           restore-keys: |
             ${{ runner.os }}-node-
-            
+
       - name: Install if no cache
         if: steps.restore-cache.outputs.cache-hit != 'true'
         run: npm ci --prefer-offline --no-audit
-          
+
       - name: Generate Nuxt types
         run: npx nuxt prepare
         continue-on-error: true
-        
+
       - name: TypeScript check
         run: npm run typecheck || echo "⚠️ TypeScript ошибки, но продолжаем"
         continue-on-error: true
-        
+
       - name: ESLint
         run: npm run lint || echo "⚠️ Линтер выдал ошибки, но продолжаем"
         continue-on-error: true
-        
+
       - name: Upload lint results
         if: always()
         uses: actions/upload-artifact@v4
@@ -163,36 +164,36 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          
+          node-version: "20"
+          cache: "npm"
+
       - name: Calculate cache key
         run: echo "key=${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}" >> $GITHUB_ENV
-          
+
       - name: Restore cache
         uses: actions/cache@v4
         continue-on-error: true
         with:
           path: node_modules
           key: ${{ env.key }}
-          
+
       - name: Install dependencies if needed
         if: steps.restore-cache.outputs.cache-hit != 'true'
         run: npm ci --prefer-offline
-          
+
       - name: Generate Nuxt types
         run: npx nuxt prepare
-        
+
       - name: Run tests (шард ${{ matrix.shard }})
         id: tests
         run: |
           npm run test -- --shard=${{ matrix.shard }}/${{ strategy.job-total }} || echo "TESTS_FAILED=true" >> $GITHUB_ENV
         continue-on-error: true
-        
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -202,7 +203,7 @@ jobs:
             coverage/
             test-results/
           retention-days: 7
-          
+
   test-report:
     name: 📊 Test Report
     needs: test
@@ -229,27 +230,27 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          
+          node-version: "20"
+          cache: "npm"
+
       - name: Calculate cache key
         run: echo "key=${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}" >> $GITHUB_ENV
-          
+
       - name: Restore cache
         uses: actions/cache@v4
         continue-on-error: true
         with:
           path: node_modules
           key: ${{ env.key }}
-          
+
       - name: Install dependencies if needed
         if: steps.restore-cache.outputs.cache-hit != 'true'
         run: npm ci --prefer-offline
-        
+
       - name: Build project with Netlify preset
         id: build
         run: |
@@ -257,12 +258,12 @@ jobs:
           npm run build
         env:
           NITRO_PRESET: netlify
-          
+
       - name: Prepare artifacts for Netlify
         run: |
           echo "📦 Подготовка артефактов для Netlify..."
           mkdir -p dist
-          
+
           # Для Nuxt с Netlify preset, сборка находится в .netlify/functions-internal
           if [ -d ".netlify/functions-internal" ]; then
             echo "✅ Найдена директория .netlify/functions-internal"
@@ -276,15 +277,15 @@ jobs:
             ls -la
             exit 1
           fi
-          
+
           cp package.json dist/
           echo "${{ github.sha }}" > dist/COMMIT
           echo "${{ github.ref }}" > dist/BRANCH
           date > dist/BUILD_TIME
-          
+
           echo "✅ Артефакты подготовлены:"
           ls -la dist/
-          
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -309,13 +310,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-${{ github.sha }}
           path: dist
-          
+
       - name: Verify artifacts
         run: |
           if [ ! -d "dist" ]; then
@@ -324,13 +325,13 @@ jobs:
           fi
           echo "✅ Артефакты загружены:"
           ls -la dist/
-          
+
       - name: Deploy to Netlify
         id: deploy
         run: |
-          # Устанавливаем Netlify CLI без сообщений о фандрайзинге
+          # Устанавливаем Netlify CLI
           npm install -g netlify-cli --no-fund
-          
+
           # Определяем директорию для деплоя
           if [ -d "dist/.netlify/functions-internal" ]; then
             DEPLOY_DIR="dist/.netlify/functions-internal"
@@ -339,46 +340,58 @@ jobs:
           else
             DEPLOY_DIR="dist"
           fi
-          
+
           echo "🚀 Деплоим из директории: $DEPLOY_DIR"
           echo "🔍 Проверяем содержимое директории:"
-          ls -la "$DEPLOY_DIR" || echo "Директория пуста или не существует"
-          
-          # Деплоим и СОХРАНЯЕМ ВЕСЬ ВЫВОД
+          ls -la "$DEPLOY_DIR"
+
+          # Деплоим и СОХРАНЯЕМ ВЫВОД (убираем 2>&1 временно)
           echo "⚙️ Запускаем netlify-cli deploy..."
+
+          # Сначала запускаем без перенаправления, чтобы увидеть ошибку в реальном времени
+          set +e  # Отключаем exit on error
+          npx netlify-cli deploy \
+            --dir="$DEPLOY_DIR" \
+            --prod \
+            --message="Deploy ${{ github.sha }}"
+
+          EXIT_CODE=$?
+          echo "🔴 Exit code: $EXIT_CODE"
+          set -e  # Включаем обратно
+
+          # Теперь запускаем с захватом вывода для сохранения
           OUTPUT=$(npx netlify-cli deploy \
             --dir="$DEPLOY_DIR" \
             --prod \
-            --message="Deploy ${{ github.sha }}" 2>&1)
-          
-          # ВЫВОДИМ ВСЁ, ЧТО ПОЛУЧИЛИ
+            --message="Deploy ${{ github.sha }}" 2>&1 || true)
+
           echo "📋 ПОЛНЫЙ ВЫВОД NETLIFY CLI:"
           echo "----------------------------------------"
           echo "$OUTPUT"
           echo "----------------------------------------"
-          
+
           # Сохраняем в output
           echo "result<<EOF" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          
+
           # Парсим URL
           URL=$(echo "$OUTPUT" | grep -oP 'Website URL: +\Khttps://[^\s]+' || echo "https://management-app-demo.netlify.app")
           echo "url=$URL" >> $GITHUB_OUTPUT
-          
-          # Проверяем успешность
-          if echo "$OUTPUT" | grep -q "Website URL:" || echo "$OUTPUT" | grep -q "Deploy is live"; then
+
+          if [ $EXIT_CODE -eq 0 ]; then
             echo "✅ Деплой успешен! URL: $URL"
             exit 0
           else
-            echo "❌ ОШИБКА ДЕПЛОЯ:"
+            echo "❌ ОШИБКА ДЕПЛОЯ (код: $EXIT_CODE)"
+            echo "📋 Полный вывод ошибки:"
             echo "$OUTPUT"
-            exit 1
+            exit $EXIT_CODE
           fi
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        
+
       - name: Health check
         if: success()
         run: |
@@ -395,16 +408,15 @@ jobs:
           done
           echo "❌ Сайт недоступен после 5 попыток"
           exit 1
-      
-    
+
       - name: Generate changelog
         if: success()
         run: |
           mkdir -p changelog
-          
+
           # Получаем последний тег
           PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          
+
           # Получаем коммиты с последнего релиза
           if [ -z "$PREV_TAG" ]; then
             COMMITS=$(git log --pretty=format:"- %s (%h) — %an" -20)
@@ -413,28 +425,28 @@ jobs:
             COMMITS=$(git log --pretty=format:"- %s (%h) — %an" $PREV_TAG..HEAD)
             COMMIT_RANGE="$PREV_TAG..HEAD"
           fi
-          
+
           # Получаем статистику
           NODE_VERSION=$(node --version)
           NUXT_VERSION=$(npx nuxt --version 2>/dev/null || echo "Не определено")
           BUILD_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
           DEPLOY_URL="${{ steps.deploy.outputs.url }}"
-          
+
           # Создаем красивый CHANGELOG
           cat > changelog/CHANGELOG.md << EOF
           # 🚀 Release v${{ github.run_number }}
-          
+
           > **Дата релиза:** $(date +"%d.%m.%Y %H:%M")
           > **Ветка:** ${{ github.ref_name }}
           > **Коммит:** \`${{ github.sha }}\`
           > **Автор:** ${{ github.actor }}
-          
+
           ## 📝 Что нового
-          
+
           $COMMITS
-          
+
           ## 🛠️ Детали сборки
-          
+
           | Параметр | Значение |
           |----------|----------|
           | **Версия** | v${{ github.run_number }} |
@@ -442,26 +454,26 @@ jobs:
           | **Nuxt** | $NUXT_VERSION |
           | **Время сборки** | $BUILD_TIME |
           | **Раннер** | ${{ runner.os }} |
-          
+
           ## 📊 Статистика
-          
+
           - **Коммитов в релизе:** $(git log --oneline $COMMIT_RANGE 2>/dev/null | wc -l)
           - **Предыдущий тег:** ${PREV_TAG:-"нет"}
           - **Статус деплоя:** ✅ Успешно
-          
+
           ## 🔗 Полезные ссылки
-          
+
           - [🌍 Открыть приложение]($DEPLOY_URL)
           - [📦 GitHub Release](https://github.com/${{ github.repository }}/releases/tag/v${{ github.run_number }})
           - [⚙️ Сборка на GitHub](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-          
+
           ---
           *Автоматически сгенерировано GitHub Actions 🤖*
           EOF
-          
+
           echo "✅ Чейнджлог создан:"
           cat changelog/CHANGELOG.md
-          
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         if: success()
@@ -473,7 +485,7 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+
   notify:
     name: 📢 Notify
     needs: [deploy, build, test, lint]
@@ -490,13 +502,13 @@ jobs:
           echo "| Test | ${{ needs.test.result }} |" >> status.md
           echo "| Build | ${{ needs.build.result }} |" >> status.md
           echo "| Deploy | ${{ needs.deploy.result }} |" >> status.md
-          
+
       - name: Upload status
         uses: actions/upload-artifact@v4
         with:
           name: pipeline-status-${{ github.sha }}
           path: status.md
-          
+
       - name: Send notification (если нужно)
         if: failure()
         run: |
