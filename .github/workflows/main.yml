@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main ]
 
+# ⚡ ВАЖНО: Даем права на создание релизов
+permissions:
+  contents: write
+  pull-requests: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -246,14 +251,13 @@ jobs:
         if: steps.restore-cache.outputs.cache-hit != 'true'
         run: npm ci --prefer-offline
         
-      - name: Build project
+      - name: Build project with Netlify preset
         id: build
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 10
-          max_attempts: 3
-          command: npm run build
-          retry_on: error
+        run: |
+          echo "🏗️ Сборка проекта для Netlify..."
+          npm run build
+        env:
+          NITRO_PRESET: netlify
           
       - name: Prepare artifacts for Netlify
         run: |
@@ -268,7 +272,6 @@ jobs:
           elif [ -d ".output/public" ]; then
             echo "✅ Найдена директория .output/public"
             cp -r .output/public/* dist/
-            cp -r .output dist/
           else
             echo "❌ Не найдена директория со сборкой!"
             ls -la
@@ -282,10 +285,6 @@ jobs:
           
           echo "✅ Артефакты подготовлены:"
           ls -la dist/
-          if [ -d "dist/.netlify" ]; then
-            echo "📁 Содержимое dist/.netlify:"
-            ls -la dist/.netlify/
-          fi
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -302,10 +301,10 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: ${{ steps.deploy.outputs.url }}
+      url: ${{ steps.deploy-url.outputs.url }}
     outputs:
       deploy-status: ${{ steps.deploy.outcome }}
-      deploy-url: ${{ steps.deploy.outputs.url }}
+      deploy-url: ${{ steps.deploy-url.outputs.url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -327,54 +326,69 @@ jobs:
           echo "✅ Артефакты загружены:"
           ls -la dist/
           
-      - name: Deploy to Netlify (без пересборки)
+      - name: Deploy to Netlify
         id: deploy
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            # Устанавливаем Netlify CLI глобально для надежности
-            npm install -g netlify-cli
-            
-            # Определяем директорию для деплоя
-            if [ -d "dist/.netlify/functions-internal" ]; then
-              DEPLOY_DIR="dist/.netlify/functions-internal"
-            elif [ -d "dist/.output/public" ]; then
-              DEPLOY_DIR="dist/.output/public"
-            else
-              DEPLOY_DIR="dist"
-            fi
-            
-            echo "🚀 Деплоим из директории: $DEPLOY_DIR"
-            
-            # Деплоим с флагом --build=false чтобы не пересобирать
-            npx netlify-cli deploy \
-              --dir="$DEPLOY_DIR" \
-              --prod \
-              --message="Deploy ${{ github.sha }}" \
-              --build=false
+        run: |
+          # Устанавливаем Netlify CLI
+          npm install -g netlify-cli
+          
+          # Определяем директорию для деплоя
+          if [ -d "dist/.netlify/functions-internal" ]; then
+            DEPLOY_DIR="dist/.netlify/functions-internal"
+          elif [ -d "dist/.output/public" ]; then
+            DEPLOY_DIR="dist/.output/public"
+          else
+            DEPLOY_DIR="dist"
+          fi
+          
+          echo "🚀 Деплоим из директории: $DEPLOY_DIR"
+          
+          # Деплоим БЕЗ флага --build=false (он не существует!)
+          OUTPUT=$(npx netlify-cli deploy \
+            --dir="$DEPLOY_DIR" \
+            --prod \
+            --message="Deploy ${{ github.sha }}" 2>&1)
+          
+          # Сохраняем вывод для парсинга URL
+          echo "OUTPUT<<EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          # Проверяем успешность
+          if echo "$OUTPUT" | grep -q "Website URL:"; then
+            echo "✅ Деплой успешен!"
+            exit 0
+          else
+            echo "❌ Ошибка деплоя:"
+            echo "$OUTPUT"
+            exit 1
+          fi
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         continue-on-error: true
         
-      - name: Get deploy URL
-        id: url
+      - name: Extract deploy URL
+        id: deploy-url
         run: |
           # Парсим URL из вывода Netlify CLI
-          DEPLOY_OUTPUT="${{ steps.deploy.outputs.stdout }}"
-          URL=$(echo "$DEPLOY_OUTPUT" | grep -oP 'https://[a-zA-Z0-9.-]+\.netlify\.app' | head -1)
+          DEPLOY_OUTPUT="${{ steps.deploy.outputs.OUTPUT }}"
+          URL=$(echo "$DEPLOY_OUTPUT" | grep -oP 'Website URL: +\Khttps://[^\s]+' || echo "")
+          
           if [ -z "$URL" ]; then
+            # Fallback URL если не удалось распарсить
             URL="https://management-app-demo.netlify.app"
+            echo "⚠️ Не удалось получить URL из вывода, используем fallback: $URL"
+          else
+            echo "✅ URL деплоя: $URL"
           fi
+          
           echo "url=$URL" >> $GITHUB_OUTPUT
-          echo "✅ URL деплоя: $URL"
         
       - name: Health check
         if: steps.deploy.outcome == 'success'
         run: |
-          URL="${{ steps.url.outputs.url }}"
+          URL="${{ steps.deploy-url.outputs.url }}"
           echo "🔍 Проверка доступности: $URL"
           for i in {1..5}; do
             echo "Попытка $i из 5..."
@@ -410,7 +424,7 @@ jobs:
           NODE_VERSION=$(node --version)
           NUXT_VERSION=$(npx nuxt --version 2>/dev/null || echo "Не определено")
           BUILD_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          DEPLOY_URL="${{ steps.url.outputs.url }}"
+          DEPLOY_URL="${{ steps.deploy-url.outputs.url }}"
           
           # Создаем красивый CHANGELOG
           cat > changelog/CHANGELOG.md << EOF
