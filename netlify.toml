@@ -1,12 +1,9 @@
 [build]
   command = "echo 'Сборка уже выполнена в CI'"
   publish = "dist"
+  
+[functions]
+  directory = ".netlify/functions-internal"
 
 [build.processing]
   skip_processing = true
-
-[functions]
-  deno_import_map = "netlify/functions/import_map.json"
-
-[dev]
-  framework = "#static"
