@@ -21,7 +21,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Меняем на 0, чтобы получить всю историю для чейнджлога
+          fetch-depth: 0
           
       - name: Setup Node.js
         id: setup-node
@@ -224,7 +224,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Нужно для получения истории коммитов
+          fetch-depth: 0
           
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -255,14 +255,37 @@ jobs:
           command: npm run build
           retry_on: error
           
-      - name: Prepare artifacts
+      - name: Prepare artifacts for Netlify
         run: |
+          echo "📦 Подготовка артефактов для Netlify..."
           mkdir -p dist
-          cp -r .output dist/ || echo "⚠️ .output не найден"
+          
+          # Для Nuxt с Netlify preset, сборка находится в .netlify/functions-internal
+          if [ -d ".netlify/functions-internal" ]; then
+            echo "✅ Найдена директория .netlify/functions-internal"
+            cp -r .netlify dist/
+            cp -r .output dist/ 2>/dev/null || echo "⚠️ .output не найден"
+          elif [ -d ".output/public" ]; then
+            echo "✅ Найдена директория .output/public"
+            cp -r .output/public/* dist/
+            cp -r .output dist/
+          else
+            echo "❌ Не найдена директория со сборкой!"
+            ls -la
+            exit 1
+          fi
+          
           cp package.json dist/
           echo "${{ github.sha }}" > dist/COMMIT
           echo "${{ github.ref }}" > dist/BRANCH
           date > dist/BUILD_TIME
+          
+          echo "✅ Артефакты подготовлены:"
+          ls -la dist/
+          if [ -d "dist/.netlify" ]; then
+            echo "📁 Содержимое dist/.netlify:"
+            ls -la dist/.netlify/
+          fi
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -282,11 +305,12 @@ jobs:
       url: ${{ steps.deploy.outputs.url }}
     outputs:
       deploy-status: ${{ steps.deploy.outcome }}
+      deploy-url: ${{ steps.deploy.outputs.url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Нужно для получения истории коммитов
+          fetch-depth: 0
           
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -303,26 +327,58 @@ jobs:
           echo "✅ Артефакты загружены:"
           ls -la dist/
           
-      - name: Deploy to Netlify
+      - name: Deploy to Netlify (без пересборки)
         id: deploy
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 5
           max_attempts: 3
           command: |
-            npx netlify-cli deploy --dir=dist --prod --message="Deploy ${{ github.sha }}"
+            # Устанавливаем Netlify CLI глобально для надежности
+            npm install -g netlify-cli
+            
+            # Определяем директорию для деплоя
+            if [ -d "dist/.netlify/functions-internal" ]; then
+              DEPLOY_DIR="dist/.netlify/functions-internal"
+            elif [ -d "dist/.output/public" ]; then
+              DEPLOY_DIR="dist/.output/public"
+            else
+              DEPLOY_DIR="dist"
+            fi
+            
+            echo "🚀 Деплоим из директории: $DEPLOY_DIR"
+            
+            # Деплоим с флагом --build=false чтобы не пересобирать
+            npx netlify-cli deploy \
+              --dir="$DEPLOY_DIR" \
+              --prod \
+              --message="Deploy ${{ github.sha }}" \
+              --build=false
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         continue-on-error: true
         
+      - name: Get deploy URL
+        id: url
+        run: |
+          # Парсим URL из вывода Netlify CLI
+          DEPLOY_OUTPUT="${{ steps.deploy.outputs.stdout }}"
+          URL=$(echo "$DEPLOY_OUTPUT" | grep -oP 'https://[a-zA-Z0-9.-]+\.netlify\.app' | head -1)
+          if [ -z "$URL" ]; then
+            URL="https://management-app-demo.netlify.app"
+          fi
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "✅ URL деплоя: $URL"
+        
       - name: Health check
         if: steps.deploy.outcome == 'success'
         run: |
-          URL="${{ steps.deploy.outputs.url }}"
+          URL="${{ steps.url.outputs.url }}"
+          echo "🔍 Проверка доступности: $URL"
           for i in {1..5}; do
-            echo "Попытка $i: проверка $URL"
-            if curl -f -I --max-time 10 "$URL"; then
+            echo "Попытка $i из 5..."
+            if curl -f -I --max-time 10 "$URL" 2>/dev/null; then
               echo "✅ Сайт доступен!"
               exit 0
             fi
@@ -333,7 +389,7 @@ jobs:
           exit 1
         continue-on-error: true
       
-      # ⭐ ТОЛЬКО ЗДЕСЬ создаем чейнджлог и релиз ⭐
+      # ⭐ Генерация чейнджлога и создание релиза ⭐
       - name: Generate changelog
         run: |
           mkdir -p changelog
@@ -354,6 +410,7 @@ jobs:
           NODE_VERSION=$(node --version)
           NUXT_VERSION=$(npx nuxt --version 2>/dev/null || echo "Не определено")
           BUILD_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          DEPLOY_URL="${{ steps.url.outputs.url }}"
           
           # Создаем красивый CHANGELOG
           cat > changelog/CHANGELOG.md << EOF
@@ -386,7 +443,7 @@ jobs:
           
           ## 🔗 Полезные ссылки
           
-          - [🌍 Открыть приложение](${{ steps.deploy.outputs.url }}) 
+          - [🌍 Открыть приложение]($DEPLOY_URL)
           - [📦 GitHub Release](https://github.com/${{ github.repository }}/releases/tag/v${{ github.run_number }})
           - [⚙️ Сборка на GitHub](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           
@@ -404,7 +461,7 @@ jobs:
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
           body_path: changelog/CHANGELOG.md
-          generate_release_notes: true  # Резервный вариант
+          generate_release_notes: true
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
