@@ -1,0 +1,12 @@
+[build]
+  command = "echo 'Сборка уже выполнена в CI'"
+  publish = "dist"
+
+[build.processing]
+  skip_processing = true
+
+[functions]
+  deno_import_map = "netlify/functions/import_map.json"
+
+[dev]
+  framework = "#static"
