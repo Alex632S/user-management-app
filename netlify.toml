@@ -1,6 +1,7 @@
 [build]
   command = "echo 'Сборка уже выполнена в CI'"
-  publish = "dist"
+  publish = "dist/.output/public"
+  functions = "dist/.netlify/functions-internal" 
   
 [functions]
   directory = ".netlify/functions-internal"

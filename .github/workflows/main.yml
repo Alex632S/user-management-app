@@ -263,38 +263,37 @@ jobs:
           echo "📦 Подготовка артефактов для Netlify..."
           mkdir -p dist
 
-          # КОПИРУЕМ ВСЁ ПРАВИЛЬНО!
+          # КОПИРУЕМ ВСЁ, ЧТО НУЖНО NETLIFY
+
+          # 1. Копируем серверные функции (обязательно для SSR!)
           if [ -d ".netlify/functions-internal" ]; then
             echo "✅ Копируем .netlify/functions-internal"
             cp -r .netlify dist/
           fi
 
-          if [ -d ".output/public" ]; then
-            echo "✅ Копируем .output/public"
-            # Копируем все содержимое public в корень dist
-            cp -r .output/public/* dist/ 2>/dev/null || true
-            # Копируем скрытые файлы (начинающиеся с _)
-            cp -r .output/public/.* dist/ 2>/dev/null || true
+          # 2. Копируем .output целиком (здесь весь SSR)
+          if [ -d ".output" ]; then
+            echo "✅ Копируем .output"
+            cp -r .output dist/
           fi
 
-          # Копируем package.json для функций
-          cp package.json dist/
+          # 3. Копируем package.json (нужно для функций)
+          cp package.json dist/ 2>/dev/null || echo "⚠️ package.json не найден"
 
           # Мета-информация
           echo "${{ github.sha }}" > dist/COMMIT
           echo "${{ github.ref }}" > dist/BRANCH
           date > dist/BUILD_TIME
 
-          echo "✅ Артефакты подготовлены. Содержимое dist:"
+          # ФИНАЛЬНАЯ ПРОВЕРКА
+          echo "✅ Артефакты подготовлены. СОДЕРЖИМОЕ dist:"
           ls -la dist/
 
-          if [ -d "dist/.netlify" ]; then
-            echo "📁 Содержимое dist/.netlify:"
-            ls -la dist/.netlify/
-          fi
+          echo "📁 СОДЕРЖИМОЕ dist/.output:"
+          ls -la dist/.output/ || echo ".output не скопирован"
 
-          echo "📁 Полный список файлов (первые 20):"
-          find dist -type f | head -20
+          echo "📁 СОДЕРЖИМОЕ dist/.netlify:"
+          ls -la dist/.netlify/ || echo ".netlify не скопирован"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
