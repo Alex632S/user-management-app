@@ -263,21 +263,44 @@ jobs:
           echo "📦 Подготовка артефактов для Netlify..."
           mkdir -p dist
 
-          # КОПИРУЕМ ВСЁ, ЧТО НУЖНО NETLIFY
+          # ДИАГНОСТИКА - смотрим, что вообще есть после сборки
+          echo "📁 СОДЕРЖИМОЕ КОРНЯ ПРОЕКТА:"
+          ls -la
 
-          # 1. Копируем серверные функции (обязательно для SSR!)
-          if [ -d ".netlify/functions-internal" ]; then
-            echo "✅ Копируем .netlify/functions-internal"
+          echo "📁 СОДЕРЖИМОЕ .output (если есть):"
+          if [ -d ".output" ]; then
+            ls -la .output/
+            echo "📁 СОДЕРЖИМОЕ .output/public (если есть):"
+            ls -la .output/public/ || echo "   .output/public не найден"
+            echo "📁 СОДЕРЖИМОЕ .output/server (если есть):"
+            ls -la .output/server/ || echo "   .output/server не найден"
+          fi
+
+          echo "📁 СОДЕРЖИМОЕ .netlify (если есть):"
+          if [ -d ".netlify" ]; then
+            ls -la .netlify/
+            echo "📁 СОДЕРЖИМОЕ .netlify/functions-internal (если есть):"
+            ls -la .netlify/functions-internal/ || echo "   .netlify/functions-internal не найден"
+          fi
+
+          # ПОИСК index.html
+          echo "🔍 ПОИСК index.html ВО ВСЕМ ПРОЕКТЕ:"
+          find . -name "index.html" -type f
+
+          # КОПИРУЕМ ФАЙЛЫ (после диагностики)
+          # 1. Копируем .netlify
+          if [ -d ".netlify" ]; then
+            echo "✅ Копируем .netlify"
             cp -r .netlify dist/
           fi
 
-          # 2. Копируем .output целиком (здесь весь SSR)
+          # 2. Копируем .output
           if [ -d ".output" ]; then
             echo "✅ Копируем .output"
             cp -r .output dist/
           fi
 
-          # 3. Копируем package.json (нужно для функций)
+          # 3. Копируем package.json
           cp package.json dist/ 2>/dev/null || echo "⚠️ package.json не найден"
 
           # Мета-информация
@@ -294,6 +317,9 @@ jobs:
 
           echo "📁 СОДЕРЖИМОЕ dist/.netlify:"
           ls -la dist/.netlify/ || echo ".netlify не скопирован"
+
+          echo "🔍 ПОИСК index.html В dist:"
+          find dist -name "index.html" -type f
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
