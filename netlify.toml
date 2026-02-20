@@ -1,10 +1,32 @@
-[build]
-  command = "echo 'Сборка уже выполнена в CI'"
-  publish = "dist/.output/public"
-  functions = "dist/.netlify/functions-internal" 
-  
-[functions]
-  directory = ".netlify/functions-internal"
+# /netlify.toml
 
-[build.processing]
-  skip_processing = true
+[build]
+  # Команда для установки зависимостей и сборки проекта
+  command = "npm run build"
+  # Директория, которую будет раздавать Netlify (для статики)
+  # Nuxt в режиме universal (SSR) генерирует ее в .output/public
+  publish = ".output/public"
+
+# Настройка переменных окружения для разных контекстов (веток)
+[context.production.environment]
+  NUXT_PUBLIC_SITE_URL = "https://your-production-site.com"
+  NODE_VERSION = "20"
+
+[context.deploy-preview.environment]
+  NUXT_PUBLIC_SITE_URL = "https://deploy-preview--your-site.netlify.app"
+  NODE_VERSION = "20"
+
+[context.branch-deploy.environment]
+  NODE_VERSION = "20"
+
+# Пример правил для заголовков кэширования
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Пример редиректа (SPA fallback для статических сайтов, если не используется SSR)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
