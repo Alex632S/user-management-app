@@ -92,3 +92,15 @@ jobs:
       environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
       upload-artifacts: true
     secrets: inherit
+
+  deploy-production:
+    name: Deploy · Production
+    needs: [artifact-build, code-report]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+
+  release-github:
+    name: Release · GitHub
+    needs: deploy-production
+    if: success()
