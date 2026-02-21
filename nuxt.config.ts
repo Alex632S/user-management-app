@@ -26,7 +26,7 @@ export default defineNuxtConfig({
   },
 
   css: [
-    '~/assets/styles/main.scss'
+    '@/app/assets/styles/main.scss'
   ],
 
   vite: {
