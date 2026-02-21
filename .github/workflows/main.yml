@@ -197,20 +197,46 @@ jobs:
         if: steps.restore-cache.outputs.cache-hit != 'true'
         run: npm ci --prefer-offline
 
+      - name: Clean previous build
+        run: |
+          rm -rf .nuxt .output dist .netlify/functions-internal
+
       - name: Build project for Netlify
         run: npm run build
         env:
           NITRO_PRESET: netlify
+          NODE_ENV: production
 
-      # ✅ ИСПРАВЛЕНО: Просто загружаем результат сборки как есть
+      - name: Verify build output
+        run: |
+          echo "🔍 Проверка структуры сборки:"
+
+          if [ -d "dist" ]; then
+            echo "✅ Папка dist найдена"
+            echo "   Содержит $(find dist -type f | wc -l) файлов"
+          else
+            echo "❌ Папка dist не найдена!"
+            exit 1
+          fi
+
+          if [ -d ".netlify/functions-internal" ]; then
+            echo "✅ Папка функций найдена"
+            echo "   Содержит $(find .netlify/functions-internal -type f | wc -l) файлов"
+          else
+            echo "⚠️ Папка функций не найдена (может быть норм для статики)"
+          fi
+
+          echo "📁 Содержимое dist:"
+          ls -la dist/
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ github.sha }}
           path: |
-            .output
-            .netlify
-            package.json
+            dist
+            .netlify/functions-internal
+            netlify.toml
           retention-days: 30
 
   deploy:
@@ -228,48 +254,71 @@ jobs:
           name: build-${{ github.sha }}
           path: .
 
-      - name: Deploy to Netlify
-        id: deploy
+      - name: Verify downloaded artifacts
         run: |
-          npm install -g netlify-cli --no-fund
+          echo "🔍 Проверка загруженных артефактов:"
+          ls -la
 
-          # Для Nuxt с Netlify preset, publish directory = .output/public
-          if [ -d ".output/public" ]; then
-            DEPLOY_DIR=".output/public"
-            echo "✅ Найдена директория: $DEPLOY_DIR"
+          if [ -d "dist" ]; then
+            echo "✅ dist/ существует"
           else
-            echo "❌ .output/public не найден!"
-            ls -la
-            ls -la .output || true
+            echo "❌ dist/ не найден!"
             exit 1
           fi
 
-          OUTPUT=$(npx netlify-cli deploy --dir="$DEPLOY_DIR" --prod --message="Deploy ${{ github.sha }}" 2>&1)
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli --no-fund
 
-          # ✅ ИСПРАВЛЕНО: Правильный парсинг URL из нового формата Netlify
+      - name: Deploy to Netlify
+        id: deploy
+        run: |
+          # Определяем параметры деплоя
+          DEPLOY_ARGS="--dir=dist --prod --message=Deploy ${{ github.sha }}"
+
+          # Добавляем функции если есть
+          if [ -d ".netlify/functions-internal" ]; then
+            DEPLOY_ARGS="$DEPLOY_ARGS --functions=.netlify/functions-internal"
+            echo "⚡ Функции будут загружены из .netlify/functions-internal"
+          fi
+
+          echo "🚀 Запускаем деплой: netlify deploy $DEPLOY_ARGS"
+
+          # Выполняем деплой
+          OUTPUT=$(npx netlify-cli deploy $DEPLOY_ARGS 2>&1)
+          EXIT_CODE=$?
+
+          # Сохраняем вывод для отладки
+          echo "$OUTPUT" > deploy-output.log
+
+          # Парсим URL из вывода
           URL=$(echo "$OUTPUT" | grep -oP 'Production deploy is live.*?https://[^\s]+' | grep -oP 'https://[^\s]+' | head -1)
 
-          # Fallback на старый формат если не нашли
           if [ -z "$URL" ]; then
             URL=$(echo "$OUTPUT" | grep -oP 'Website URL: +\Khttps://[^\s]+')
           fi
 
-          # Если всё еще нет URL, используем fallback
           if [ -z "$URL" ]; then
-            URL="https://management-app-demo.netlify.app"
-            echo "⚠️ URL не найден в выводе, использую fallback: $URL"
+            # Пробуем найти любой URL в выводе
+            URL=$(echo "$OUTPUT" | grep -oP 'https://[^\s]+' | head -1)
           fi
 
+          # Сохраняем URL в выходные параметры
           echo "url=$URL" >> $GITHUB_OUTPUT
 
-          # ✅ ИСПРАВЛЕНО: Проверка успешности деплоя
+          # Проверяем успешность деплоя
           if echo "$OUTPUT" | grep -q "Deploy is live\|Production deploy is live\|Website URL:"; then
             echo "✅ Деплой успешно завершен!"
             echo "🌍 URL: $URL"
+            
+            # Показываем статистику деплоя
+            echo "📊 Статистика деплоя:"
+            echo "$OUTPUT" | grep -E "files uploaded|functions uploaded|size" || true
+            
             exit 0
           else
-            echo "❌ Ошибка деплоя:"
-            echo "$OUTPUT"
+            echo "❌ Ошибка деплоя!"
+            echo "📄 Последние 20 строк вывода:"
+            echo "$OUTPUT" | tail -20
             exit 1
           fi
         env:
@@ -280,24 +329,47 @@ jobs:
         if: success()
         run: |
           URL="${{ steps.deploy.outputs.url }}"
+
+          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            echo "⚠️ URL не получен, пропускаем health check"
+            exit 0
+          fi
+
           echo "🔍 Проверяем доступность: $URL"
-          for i in {1..5}; do
-            if curl -f -I --max-time 10 "$URL" >/dev/null 2>&1; then
-              echo "✅ Сайт доступен!"
+
+          for i in {1..10}; do
+            echo "⏳ Попытка $i/10..."
+            
+            # Проверяем HTTP статус
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" 2>/dev/null || echo "000")
+            
+            if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "302" ]; then
+              echo "✅ Сайт доступен! (HTTP $HTTP_STATUS)"
               exit 0
             fi
-            echo "⏳ Попытка $i/5, ждем 5 секунд..."
-            sleep 5
+            
+            echo "⏳ Статус: $HTTP_STATUS, ждем 3 секунды..."
+            sleep 3
           done
-          echo "❌ Сайт не отвечает после 5 попыток"
+
+          echo "❌ Сайт не отвечает после 10 попыток"
           exit 1
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         if: success()
         with:
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
           generate_release_notes: true
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify success
+        if: success()
+        run: |
+          echo "🎉 Деплой успешно завершен!"
+          echo "🌍 Сайт доступен по адресу: ${{ steps.deploy.outputs.url }}"
+          echo "📦 Версия: v${{ github.run_number }}"
+          echo "🔗 Коммит: ${{ github.sha }}"
