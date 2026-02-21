@@ -197,23 +197,20 @@ jobs:
         if: steps.restore-cache.outputs.cache-hit != 'true'
         run: npm ci --prefer-offline
 
-      - name: Build project
+      - name: Build project for Netlify
         run: npm run build
         env:
           NITRO_PRESET: netlify
 
-      - name: Prepare artifacts
-        run: |
-          mkdir -p dist
-          if [ -d ".netlify" ]; then cp -r .netlify dist/; fi
-          if [ -d ".output" ]; then cp -r .output dist/; fi
-          cp package.json dist/
-
+      # ✅ ИСПРАВЛЕНО: Просто загружаем результат сборки как есть
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ github.sha }}
-          path: dist/
+          path: |
+            .output
+            .netlify
+            package.json
           retention-days: 30
 
   deploy:
@@ -229,18 +226,50 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-${{ github.sha }}
-          path: dist
+          path: .
 
+      # ✅ ИСПРАВЛЕНО: Правильный деплой с корректной проверкой
       - name: Deploy to Netlify
         id: deploy
         run: |
           npm install -g netlify-cli --no-fund
-          OUTPUT=$(npx netlify-cli deploy --dir="dist" --prod --message="Deploy ${{ github.sha }}" 2>&1)
-          URL=$(echo "$OUTPUT" | grep -oP 'Website URL: +\Khttps://[^\s]+' || echo "https://management-app-demo.netlify.app")
+
+          # Для Nuxt с Netlify preset, publish directory = .output/public
+          if [ -d ".output/public" ]; then
+            DEPLOY_DIR=".output/public"
+            echo "✅ Найдена директория: $DEPLOY_DIR"
+          else
+            echo "❌ .output/public не найден!"
+            ls -la
+            ls -la .output || true
+            exit 1
+          fi
+
+          OUTPUT=$(npx netlify-cli deploy --dir="$DEPLOY_DIR" --prod --message="Deploy ${{ github.sha }}" 2>&1)
+
+          # ✅ ИСПРАВЛЕНО: Правильный парсинг URL из нового формата Netlify
+          URL=$(echo "$OUTPUT" | grep -oP 'Production deploy is live.*?https://[^\s]+' | grep -oP 'https://[^\s]+' | head -1)
+
+          # Fallback на старый формат если не нашли
+          if [ -z "$URL" ]; then
+            URL=$(echo "$OUTPUT" | grep -oP 'Website URL: +\Khttps://[^\s]+')
+          fi
+
+          # Если всё еще нет URL, используем fallback
+          if [ -z "$URL" ]; then
+            URL="https://management-app-demo.netlify.app"
+            echo "⚠️ URL не найден в выводе, использую fallback: $URL"
+          fi
+
           echo "url=$URL" >> $GITHUB_OUTPUT
-          if echo "$OUTPUT" | grep -q "Website URL:"; then
+
+          # ✅ ИСПРАВЛЕНО: Проверка успешности деплоя
+          if echo "$OUTPUT" | grep -q "Deploy is live\|Production deploy is live\|Website URL:"; then
+            echo "✅ Деплой успешно завершен!"
+            echo "🌍 URL: $URL"
             exit 0
           else
+            echo "❌ Ошибка деплоя:"
             echo "$OUTPUT"
             exit 1
           fi
@@ -252,12 +281,16 @@ jobs:
         if: success()
         run: |
           URL="${{ steps.deploy.outputs.url }}"
+          echo "🔍 Проверяем доступность: $URL"
           for i in {1..5}; do
             if curl -f -I --max-time 10 "$URL" >/dev/null 2>&1; then
+              echo "✅ Сайт доступен!"
               exit 0
             fi
+            echo "⏳ Попытка $i/5, ждем 5 секунд..."
             sleep 5
           done
+          echo "❌ Сайт не отвечает после 5 попыток"
           exit 1
 
       - name: Create GitHub Release
