@@ -1,0 +1,25 @@
+name: Deploy Production
+
+jobs:
+  env-setup:
+    name: ① Environment · Setup
+
+  test-suite:
+    name: ② Test · Suite
+    uses: ./.github/workflows/test.yml
+
+  artifact-build:
+    name: ③ Artifact · Build
+    uses: ./.github/workflows/build.yml
+
+  deploy-netlify:
+    name: ④ Deploy · Netlify
+    needs: [env-setup, test-suite, artifact-build]
+
+  release-github:
+    name: ⑤ Release · GitHub
+    needs: deploy-netlify
+
+  notify-success:
+    name: ⑥ Notify · Success
+    needs: [deploy-netlify, release-github]
