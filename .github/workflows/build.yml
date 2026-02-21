@@ -1,0 +1,67 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      upload-artifacts:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    name: Build (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+
+      - name: Install if needed
+        run: |
+          if [ ! -d "node_modules" ]; then
+            npm ci --prefer-offline --no-audit --no-fund
+          fi
+
+      - name: Clean
+        run: rm -rf .nuxt .output dist .netlify
+
+      - name: Build
+        run: npm run build
+        env:
+          NITRO_PRESET: netlify
+          NODE_ENV: ${{ inputs.environment == 'production' && 'production' || 'development' }}
+
+      - name: Verify build
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "Error: dist directory not found"
+            exit 1
+          fi
+
+      - name: Upload artifacts
+        if: inputs.upload-artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ inputs.environment }}-${{ github.sha }}
+          path: |
+            dist
+            .netlify/functions-internal
+            netlify.toml
+          retention-days: 7
+          if-no-files-found: error
