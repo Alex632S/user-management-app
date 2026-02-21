@@ -1,0 +1,8 @@
+const index_vue_vue_type_style_index_0_scoped_48ee800b_lang = ".container[data-v-48ee800b]{margin:0 auto;max-width:1200px;padding:20px}.stats[data-v-48ee800b]{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin:20px 0}.stat-card[data-v-48ee800b]{background:#fff;border-radius:8px;box-shadow:0 2px 4px #0000001a;padding:20px}.actions[data-v-48ee800b]{display:flex;gap:10px;margin:20px 0}.btn[data-v-48ee800b]{border:none;border-radius:4px;cursor:pointer;font-size:14px;padding:10px 20px}.btn[data-v-48ee800b]:disabled{cursor:not-allowed;opacity:.5}.btn-primary[data-v-48ee800b]{background:#3b82f6;color:#fff}.btn-danger[data-v-48ee800b]{background:#ef4444;color:#fff}.user-list[data-v-48ee800b]{display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}.user-card[data-v-48ee800b]{background:#fff;border-radius:8px;box-shadow:0 2px 4px #0000001a;display:flex;gap:15px;padding:15px}.avatar[data-v-48ee800b]{border-radius:50%;height:60px;-o-object-fit:cover;object-fit:cover;width:60px}.info[data-v-48ee800b]{flex:1}.badge[data-v-48ee800b]{border-radius:4px;display:inline-block;font-size:12px;font-weight:500;margin-right:8px;padding:4px 8px}.badge.admin[data-v-48ee800b]{background:#ef4444;color:#fff}.badge.editor[data-v-48ee800b]{background:#3b82f6;color:#fff}.badge.active[data-v-48ee800b],.badge.viewer[data-v-48ee800b]{background:#10b981;color:#fff}.badge.blocked[data-v-48ee800b]{background:#6b7280;color:#fff}";
+
+const indexStyles_BVgVtZ9E = [
+  index_vue_vue_type_style_index_0_scoped_48ee800b_lang
+];
+
+export { indexStyles_BVgVtZ9E as default };
+//# sourceMappingURL=index-styles.BVgVtZ9E.mjs.map

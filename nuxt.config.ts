@@ -5,6 +5,18 @@ export default defineNuxtConfig({
 
   srcDir: 'app/',
 
+  modules: [
+    '@netlify/nuxt',
+    '@pinia/nuxt',
+    '@vee-validate/nuxt'
+  ],
+
+   nitro: {
+    preset: 'netlify'
+  },
+  
+  compatibilityDate: '2025-02-22',
+
   typescript: {
     strict: true,
     typeCheck: true,
@@ -27,5 +39,5 @@ export default defineNuxtConfig({
     '@': './'
   },
 
-  compatibilityDate: '2025-02-16'
+  ssr: true
 })

@@ -228,7 +228,6 @@ jobs:
           name: build-${{ github.sha }}
           path: .
 
-      # ✅ ИСПРАВЛЕНО: Правильный деплой с корректной проверкой
       - name: Deploy to Netlify
         id: deploy
         run: |

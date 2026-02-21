@@ -26,6 +26,7 @@
   "devDependencies": {
     "@faker-js/faker": "^10.3.0",
     "@mswjs/data": "^0.16.2",
+    "@netlify/nuxt": "^0.2.24",
     "@nuxtjs/eslint-config-typescript": "12.1.0",
     "@types/node": "^25.2.3",
     "@vitejs/plugin-vue": "^6.0.4",
