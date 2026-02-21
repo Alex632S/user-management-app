@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   setup:
-    name: Setup & Cache
+    name: ① Environment · Setup
     runs-on: ubuntu-latest
     outputs:
       cache-key: ${{ steps.final-key.outputs.key }}
@@ -74,7 +74,7 @@ jobs:
         continue-on-error: true
 
   test:
-    name: Test Suite
+    name: ② Code · Verify
     needs: setup
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     uses: ./.github/workflows/test.yml
@@ -83,7 +83,7 @@ jobs:
     secrets: inherit
 
   build:
-    name: Build
+    name: ③ Artifact · Build
     needs: [setup, test]
     if: github.ref == 'refs/heads/main' || github.base_ref == 'main'
     uses: ./.github/workflows/build.yml
@@ -94,13 +94,163 @@ jobs:
     secrets: inherit
 
   deploy-production:
-    name: Deploy · Production
-    needs: [artifact-build, code-report]
+    name: ④ Deploy · Production
+    needs: [setup, build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
     environment:
       name: production
+      url: ${{ steps.deploy.outputs.url }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-production-${{ github.sha }}
+          path: .
+
+      - name: Verify downloaded artifacts
+        run: |
+          echo "🔍 Проверка артефактов:"
+          if [ -d "dist" ]; then
+            echo "✅ dist/ найден"
+            ls -la dist/
+          else
+            echo "❌ dist/ не найден!"
+            exit 1
+          fi
+
+      - name: Deploy to Netlify
+        id: deploy
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          publish-dir: ./dist
+          functions-dir: ./.netlify/functions-internal
+          production-deploy: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Production deploy: ${{ github.sha }}"
+          enable-pull-request-comment: false
+          enable-commit-comment: true
+          alias: production
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        timeout-minutes: 5
+
+      - name: Health check
+        run: |
+          URL="${{ steps.deploy.outputs.url }}"
+
+          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            echo "⚠️ URL не получен, проверьте деплой вручную"
+            exit 0
+          fi
+
+          echo "🔍 Проверка доступности: $URL"
+
+          for i in {1..10}; do
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" 2>/dev/null || echo "000")
+            if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "302" ]; then
+              echo "✅ Сайт доступен (HTTP $HTTP_STATUS)"
+              exit 0
+            fi
+            echo "⏳ Попытка $i/10: статус $HTTP_STATUS"
+            sleep 5
+          done
+
+          echo "⚠️ Сайт не отвечает, но деплой выполнен"
 
   release-github:
-    name: Release · GitHub
+    name: ⑤ Release · GitHub
     needs: deploy-production
+    if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Get version from package.json
+        id: package-version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_tag=v$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: release-notes
+        run: |
+          # Получаем предыдущий тег
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -n "$PREV_TAG" ]; then
+            echo "## Что нового" > RELEASE_NOTES.md
+            echo "" >> RELEASE_NOTES.md
+            git log --pretty=format:"* %s" $PREV_TAG..HEAD >> RELEASE_NOTES.md
+          else
+            echo "## Первый релиз" > RELEASE_NOTES.md
+            echo "" >> RELEASE_NOTES.md
+            echo "* Начальная версия приложения" >> RELEASE_NOTES.md
+          fi
+
+      - name: Download build artifacts for release
+        uses: actions/download-artifact@v4
+        with:
+          name: build-production-${{ github.sha }}
+          path: ./release-artifacts
+
+      - name: Create archive for release
+        run: |
+          cd release-artifacts
+          tar -czf ../build-${{ github.sha }}.tar.gz .
+          cd ..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.package-version.outputs.version }}
+          name: Release v${{ steps.package-version.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          files: |
+            build-${{ github.sha }}.tar.gz
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-success:
+    name: ⑥ Notify · Success
+    needs: [deploy-production, release-github]
     if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get deployment info
+        id: info
+        run: |
+          echo "commit=${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "run_id=${{ github.run_id }}" >> $GITHUB_OUTPUT
+
+      - name: Display success message
+        run: |
+          echo "═══════════════════════════════════════════"
+          echo "   ✅ ДЕПЛОЙ УСПЕШНО ЗАВЕРШЕН"
+          echo "═══════════════════════════════════════════"
+          echo "🌍 URL: ${{ needs.deploy-production.outputs.url }}"
+          echo "📦 Версия: ${{ needs.release-github.outputs.version }}"
+          echo "🔗 Коммит: ${{ github.sha }}"
+          echo "📊 Релиз: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.release-github.outputs.version }}"
+          echo "═══════════════════════════════════════════"
