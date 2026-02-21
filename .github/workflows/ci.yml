@@ -20,16 +20,75 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  setup:
+    name: Setup & Cache
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.final-key.outputs.key }}
+      node-version: ${{ steps.node-version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Save Node version
+        id: node-version
+        run: echo "version=$(node --version)" >> $GITHUB_OUTPUT
+
+      - name: Calculate cache key
+        id: calc-key
+        run: |
+          KEY="${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}"
+          echo "key=$KEY" >> $GITHUB_OUTPUT
+
+      - name: Cache node_modules
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.npm
+          key: ${{ steps.calc-key.outputs.key }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies (if no cache)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci --prefer-offline --no-audit --no-fund
+        env:
+          NODE_ENV: development
+
+      - name: Set final cache key
+        id: final-key
+        run: echo "key=${{ steps.calc-key.outputs.key }}" >> $GITHUB_OUTPUT
+
+      - name: Generate Nuxt types
+        run: npx nuxt prepare
+        continue-on-error: true
+
   test:
+    name: Test Suite
+    needs: setup
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     uses: ./.github/workflows/test.yml
+    with:
+      cache-key: ${{ needs.setup.outputs.cache-key }}
     secrets: inherit
 
   build:
-    needs: test
+    name: Build
+    needs: [setup, test]
     if: github.ref == 'refs/heads/main' || github.base_ref == 'main'
     uses: ./.github/workflows/build.yml
     with:
+      cache-key: ${{ needs.setup.outputs.cache-key }}
       environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
       upload-artifacts: true
     secrets: inherit

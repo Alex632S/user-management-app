@@ -1,89 +1,88 @@
-name: Deploy Production
+name: Build
 
 on:
-  push:
-    tags:
-      - "v*"
-  workflow_dispatch:
+  workflow_call:
     inputs:
-      version:
-        description: Version to deploy
+      cache-key:
+        required: true
+        type: string
+        description: "Cache key for node_modules"
+      environment:
+        required: true
+        type: string
+        description: "Build environment (production/preview)"
+      upload-artifacts:
         required: false
-
-permissions:
-  contents: write
-  id-token: write
-
-concurrency:
-  group: production-deploy
-  cancel-in-progress: false
+        type: boolean
+        default: false
+        description: "Upload build artifacts"
 
 jobs:
-  test:
-    uses: ./.github/workflows/test.yml
-    secrets: inherit
-
   build:
-    needs: test
-    uses: ./.github/workflows/build.yml
-    with:
-      environment: production
-      upload-artifacts: true
-    secrets: inherit
-
-  deploy:
-    needs: build
+    name: Build (${{ inputs.environment }})
     runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: ${{ steps.deploy.outputs.url }}
-
     steps:
-      - name: Download build
-        uses: actions/download-artifact@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          name: build-production-${{ github.sha }}
-          path: .
+          fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Deploy to Netlify
-        id: deploy
-        uses: nwtgck/actions-netlify@v3.0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          publish-dir: ./dist
-          functions-dir: ./.netlify/functions-internal
-          production-deploy: true
-          deploy-message: "Production release ${{ github.ref_name }}"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          node-version: "20"
+          cache: "npm"
 
-      - name: Health check
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ inputs.cache-key }}
+
+      - name: Clean previous build
         run: |
-          URL="${{ steps.deploy.outputs.url }}"
-          for i in {1..10}; do
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" 2>/dev/null || echo "000")
-            if [ "$HTTP_STATUS" = "200" ]; then
-              echo "Health check passed"
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "Warning: Health check failed, but deployment completed"
+          rm -rf .nuxt .output dist .netlify/functions-internal
 
-  release:
-    needs: deploy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          generate_release_notes: true
-          make_latest: true
+      - name: Build project for Netlify
+        run: npm run build
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NITRO_PRESET: netlify
+          NODE_ENV: ${{ inputs.environment == 'production' && 'production' || 'development' }}
+          BUILD_ENV: ${{ inputs.environment }}
+          BUILD_COMMIT: ${{ github.sha }}
+          BUILD_REF: ${{ github.ref }}
+
+      - name: Verify build output
+        run: |
+          echo "🔍 Проверка структуры сборки:"
+
+          if [ -d "dist" ]; then
+            echo "✅ Папка dist найдена"
+            echo "   Содержит $(find dist -type f | wc -l) файлов"
+          else
+            echo "❌ Папка dist не найдена!"
+            exit 1
+          fi
+
+          if [ -d ".netlify/functions-internal" ]; then
+            echo "✅ Папка функций найдена"
+            echo "   Содержит $(find .netlify/functions-internal -type f | wc -l) файлов"
+          else
+            echo "⚠️ Папка функций не найдена (может быть норм для статики)"
+          fi
+
+          echo "📁 Содержимое dist:"
+          ls -la dist/
+
+      - name: Upload build artifacts
+        if: inputs.upload-artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ inputs.environment }}-${{ github.sha }}
+          path: |
+            dist
+            .netlify/functions-internal
+            netlify.toml
+          retention-days: 30
+          if-no-files-found: error
