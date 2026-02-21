@@ -16,6 +16,7 @@ export default defineNuxtConfig({
       publicDir: 'dist',
       serverDir: '.netlify/functions-internal'
     },
+    // ✅ Костыль для бага с server.mjs
     hooks: {
       'compiled': async () => {
         const fs = await import('node:fs/promises')
@@ -60,7 +61,7 @@ export default defineNuxtConfig({
   ssr: true,
 
   plugins: [
-    '~/app/plugins/msw.client.ts'
+    '~/plugins/msw.client.ts'
   ],
 
   runtimeConfig: {
