@@ -1,35 +1,32 @@
-name: Deploy Production
+name: Build
 
 on:
-  push:
-    tags:
-      - "v*"
-  workflow_dispatch:
+  workflow_call:
     inputs:
-      version:
-        description: "Version to deploy"
+      cache-key:
+        required: true
+        type: string
+        description: "Cache key for node_modules"
+      environment:
+        required: true
+        type: string
+        description: "Build environment (production/preview)"
+      upload-artifacts:
         required: false
-        default: "latest"
-
-permissions:
-  contents: write
-  id-token: write
-
-concurrency:
-  group: production-deploy
-  cancel-in-progress: false
+        type: boolean
+        default: false
+        description: "Upload build artifacts"
 
 jobs:
-  setup:
-    name: Setup & Cache
+  build:
+    name: Build (${{ inputs.environment }})
     runs-on: ubuntu-latest
-    outputs:
-      cache-key: ${{ steps.final-key.outputs.key }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -37,144 +34,55 @@ jobs:
           node-version: "20"
           cache: "npm"
 
-      - name: Calculate cache key
-        id: calc-key
-        run: |
-          KEY="${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}"
-          echo "key=$KEY" >> $GITHUB_OUTPUT
-
-      - name: Cache node_modules
+      - name: Restore cache
         uses: actions/cache@v4
         with:
-          path: |
-            node_modules
-            ~/.npm
-          key: ${{ steps.calc-key.outputs.key }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          path: node_modules
+          key: ${{ inputs.cache-key }}
 
-      - name: Set final cache key
-        id: final-key
-        run: echo "key=${{ steps.calc-key.outputs.key }}" >> $GITHUB_OUTPUT
-
-  test:
-    name: Test Suite
-    needs: setup
-    uses: ./.github/workflows/test.yml
-    with:
-      cache-key: ${{ needs.setup.outputs.cache-key }}
-    secrets: inherit
-
-  build:
-    name: Build Production
-    needs: [setup, test]
-    uses: ./.github/workflows/build.yml
-    with:
-      cache-key: ${{ needs.setup.outputs.cache-key }}
-      environment: production
-      upload-artifacts: true
-    secrets: inherit
-
-  deploy:
-    name: Deploy to Netlify
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: ${{ steps.deploy.outputs.url }}
-
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-production-${{ github.sha }}
-          path: .
-
-      - name: Verify downloaded artifacts
+      - name: Clean previous build
         run: |
-          echo "🔍 Проверка загруженных артефактов:"
-          ls -la
+          rm -rf .nuxt .output dist .netlify/functions-internal
+
+      - name: Build project for Netlify
+        run: npm run build
+        env:
+          NITRO_PRESET: netlify
+          NODE_ENV: ${{ inputs.environment == 'production' && 'production' || 'development' }}
+          BUILD_ENV: ${{ inputs.environment }}
+          BUILD_COMMIT: ${{ github.sha }}
+          BUILD_REF: ${{ github.ref }}
+
+      - name: Verify build output
+        run: |
+          echo "🔍 Проверка структуры сборки:"
 
           if [ -d "dist" ]; then
-            echo "✅ dist/ существует"
+            echo "✅ Папка dist найдена"
+            echo "   Содержит $(find dist -type f | wc -l) файлов"
           else
-            echo "❌ dist/ не найден!"
+            echo "❌ Папка dist не найдена!"
             exit 1
           fi
 
-      - name: Deploy to Netlify
-        id: deploy
-        uses: nwtgck/actions-netlify@v3.0
-        with:
-          publish-dir: ./dist
-          functions-dir: ./.netlify/functions-internal
-          production-deploy: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Production release ${{ github.ref_name }}"
-          enable-pull-request-comment: false
-          enable-commit-comment: true
-          overwrites-pull-request-comment: false
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        timeout-minutes: 5
-
-      - name: Health check
-        run: |
-          URL="${{ steps.deploy.outputs.url }}"
-
-          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
-            echo "⚠️ URL не получен, но деплой вероятно успешен"
-            exit 0
+          if [ -d ".netlify/functions-internal" ]; then
+            echo "✅ Папка функций найдена"
+            echo "   Содержит $(find .netlify/functions-internal -type f | wc -l) файлов"
+          else
+            echo "⚠️ Папка функций не найдена (может быть норм для статики)"
           fi
 
-          echo "🔍 Проверяем доступность: $URL"
+          echo "📁 Содержимое dist:"
+          ls -la dist/
 
-          for i in {1..10}; do
-            echo "⏳ Попытка $i/10..."
-            
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" 2>/dev/null || echo "000")
-            
-            if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "302" ]; then
-              echo "✅ Сайт доступен! (HTTP $HTTP_STATUS)"
-              exit 0
-            fi
-            
-            echo "⏳ Статус: $HTTP_STATUS, ждем 5 секунды..."
-            sleep 5
-          done
-
-          echo "⚠️ Сайт не отвечает, но деплой выполнен."
-
-  release:
-    name: Create GitHub Release
-    needs: deploy
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Upload build artifacts
+        if: inputs.upload-artifacts
+        uses: actions/upload-artifact@v4
         with:
-          fetch-depth: 0
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          generate_release_notes: true
-          make_latest: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  notify:
-    name: Notify Success
-    needs: [deploy, release]
-    if: success()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send notification
-        run: |
-          echo "🎉 Деплой успешно завершен!"
-          echo "🌍 URL: ${{ needs.deploy.outputs.url }}"
-          echo "📦 Версия: ${{ github.ref_name }}"
-          echo "🔗 Коммит: ${{ github.sha }}"
+          name: build-${{ inputs.environment }}-${{ github.sha }}
+          path: |
+            dist
+            .netlify/functions-internal
+            netlify.toml
+          retention-days: 30
+          if-no-files-found: error
