@@ -1,0 +1,84 @@
+name: GitHub Release
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        required: true
+        type: string
+        description: "Commit SHA to release"
+    outputs:
+      version:
+        description: "Released version"
+        value: ${{ jobs.release.outputs.version }}
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    name: Release · GitHub
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.package-version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Get version from package.json
+        id: package-version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_tag=v$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: release-notes
+        run: |
+          # Получаем предыдущий тег
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -n "$PREV_TAG" ]; then
+            echo "## Что нового" > RELEASE_NOTES.md
+            echo "" >> RELEASE_NOTES.md
+            git log --pretty=format:"* %s" $PREV_TAG..HEAD >> RELEASE_NOTES.md
+          else
+            echo "## Первый релиз" > RELEASE_NOTES.md
+            echo "" >> RELEASE_NOTES.md
+            echo "* Начальная версия приложения" >> RELEASE_NOTES.md
+          fi
+
+      - name: Download build artifacts for release
+        uses: actions/download-artifact@v4
+        with:
+          name: build-production-${{ inputs.sha }}
+          path: ./release-artifacts
+
+      - name: Create archive for release
+        run: |
+          cd release-artifacts
+          tar -czf ../build-${{ inputs.sha }}.tar.gz .
+          cd ..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.package-version.outputs.version }}
+          name: Release v${{ steps.package-version.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          files: |
+            build-${{ inputs.sha }}.tar.gz
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,88 +1,102 @@
-name: Build
+name: Deploy Production
 
 on:
   workflow_call:
     inputs:
-      cache-key:
+      sha:
         required: true
         type: string
-        description: "Cache key for node_modules"
-      environment:
-        required: true
-        type: string
-        description: "Build environment (production/preview)"
-      upload-artifacts:
-        required: false
-        type: boolean
-        default: false
-        description: "Upload build artifacts"
+        description: "Commit SHA to deploy"
+    outputs:
+      url:
+        description: "Deployed URL"
+        value: ${{ jobs.deploy.outputs.url }}
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
-  build:
-    name: Build (${{ inputs.environment }})
+  deploy:
+    name: Deploy · Netlify
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
         with:
-          fetch-depth: 1
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          name: build-production-${{ inputs.sha }}
+          path: .
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Restore cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ inputs.cache-key }}
-
-      - name: Clean previous build
+      - name: Verify downloaded artifacts
         run: |
-          rm -rf .nuxt .output dist .netlify/functions-internal
-
-      - name: Build project for Netlify
-        run: npm run build
-        env:
-          NITRO_PRESET: netlify
-          NODE_ENV: ${{ inputs.environment == 'production' && 'production' || 'development' }}
-          BUILD_ENV: ${{ inputs.environment }}
-          BUILD_COMMIT: ${{ github.sha }}
-          BUILD_REF: ${{ github.ref }}
-
-      - name: Verify build output
-        run: |
-          echo "Проверка структуры сборки:"
-
+          echo "Проверка артефактов:"
           if [ -d "dist" ]; then
-            echo "Папка dist найдена"
-            echo "   Содержит $(find dist -type f | wc -l) файлов"
+            echo "dist/ найден"
+            ls -la dist/
           else
-            echo "Папка dist не найдена!"
+            echo "dist/ не найден!"
             exit 1
           fi
 
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli --no-fund
+
+      - name: Deploy to Netlify
+        id: deploy
+        run: |
+          # Формируем параметры деплоя
+          DEPLOY_ARGS="--dir=dist --prod --message=Deploy ${{ inputs.sha }}"
+
+          # Добавляем функции если есть
           if [ -d ".netlify/functions-internal" ]; then
-            echo "Папка функций найдена"
-            echo "   Содержит $(find .netlify/functions-internal -type f | wc -l) файлов"
-          else
-            echo "Папка функций не найдена (может быть норм для статики)"
+            DEPLOY_ARGS="$DEPLOY_ARGS --functions=.netlify/functions-internal"
+            echo "Функции найдены в .netlify/functions-internal"
           fi
 
-          echo "Содержимое dist:"
-          ls -la dist/
+          echo "Запускаем деплой: netlify deploy $DEPLOY_ARGS"
 
-      - name: Upload build artifacts
-        if: inputs.upload-artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-${{ inputs.environment }}-${{ github.sha }}
-          path: |
-            dist
-            .netlify/functions-internal
-            netlify.toml
-          retention-days: 30
-          if-no-files-found: error
+          # Выполняем деплой и сохраняем вывод
+          npx netlify-cli deploy $DEPLOY_ARGS 2>&1 | tee deploy-output.log
+
+          # Парсим URL из вывода
+          URL=$(cat deploy-output.log | grep -oP 'https://[a-zA-Z0-9.-]+\.netlify\.app' | head -1)
+
+          # Если не нашли, пробуем другой паттерн
+          if [ -z "$URL" ]; then
+            URL=$(cat deploy-output.log | grep -oP 'https://[^\s]+' | grep netlify | head -1)
+          fi
+
+          # Сохраняем URL
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Деплой выполнен: $URL"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      - name: Health check
+        run: |
+          URL="${{ steps.deploy.outputs.url }}"
+
+          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            echo "URL не получен, проверьте деплой вручную"
+            exit 0
+          fi
+
+          echo "Проверка доступности: $URL"
+
+          for i in {1..10}; do
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" 2>/dev/null || echo "000")
+            if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "302" ]; then
+              echo "Сайт доступен (HTTP $HTTP_STATUS)"
+              exit 0
+            fi
+            echo "Попытка $i/10: статус $HTTP_STATUS"
+            sleep 5
+          done
+
+          echo "Сайт не отвечает, но деплой выполнен"
