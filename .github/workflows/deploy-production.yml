@@ -1,25 +1,55 @@
-name: Deploy Production
+deploy:
+  name: ④ Deploy · Netlify
+  needs: [setup, test, build]
+  runs-on: ubuntu-latest
+  environment:
+    name: production
+    url: ${{ steps.deploy.outputs.url }}
+  steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-production-${{ github.sha }}
+        path: . # ⭐ Скачиваем прямо в текущую директорию
 
-jobs:
-  env-setup:
-    name: ① Environment · Setup
+    - name: Verify downloaded artifacts
+      run: |
+        echo "🔍 Проверка артефактов:"
+        ls -la
 
-  test-suite:
-    name: ② Test · Suite
-    uses: ./.github/workflows/test.yml
+        if [ ! -d "dist" ]; then
+          echo "❌ dist/ не найден!"
+          exit 1
+        fi
 
-  artifact-build:
-    name: ③ Artifact · Build
-    uses: ./.github/workflows/build.yml
+    - name: Install Netlify CLI
+      run: npm install -g netlify-cli --no-fund
 
-  deploy-netlify:
-    name: ④ Deploy · Netlify
-    needs: [env-setup, test-suite, artifact-build]
+    - name: Deploy to Netlify
+      id: deploy
+      run: |
+        # Формируем аргументы как в исходном пайплайне
+        DEPLOY_ARGS="--dir=dist --prod --message=Deploy ${{ github.sha }}"
 
-  release-github:
-    name: ⑤ Release · GitHub
-    needs: deploy-netlify
+        if [ -d ".netlify/functions-internal" ]; then
+          DEPLOY_ARGS="$DEPLOY_ARGS --functions=.netlify/functions-internal"
+          echo "⚡ Функции найдены в .netlify/functions-internal"
+        fi
 
-  notify-success:
-    name: ⑥ Notify · Success
-    needs: [deploy-netlify, release-github]
+        echo "🚀 Запускаем: netlify deploy $DEPLOY_ARGS"
+
+        # Выполняем деплой и сохраняем вывод
+        npx netlify-cli deploy $DEPLOY_ARGS 2>&1 | tee deploy-output.log
+
+        # Парсим URL
+        URL=$(cat deploy-output.log | grep -oP 'https://[a-zA-Z0-9.-]+\.netlify\.app' | head -1)
+        if [ -z "$URL" ]; then
+          URL=$(cat deploy-output.log | grep -oP 'https://[^\s]+' | grep netlify | head -1)
+        fi
+
+        echo "url=$URL" >> $GITHUB_OUTPUT
+        echo "✅ URL: $URL"
+        exit 0
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
