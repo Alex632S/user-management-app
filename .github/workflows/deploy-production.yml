@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   setup:
-    name: ① Environment · Setup
+    name: Environment · Setup
     runs-on: ubuntu-latest
     outputs:
       cache-key: ${{ steps.final-key.outputs.key }}
@@ -44,7 +44,7 @@ jobs:
         run: echo "key=${{ steps.calc-key.outputs.key }}" >> $GITHUB_OUTPUT
 
   test:
-    name: ② Test · Suite
+    name: Test · Suite
     needs: setup
     uses: ./.github/workflows/test.yml
     with:
@@ -52,7 +52,7 @@ jobs:
     secrets: inherit
 
   build:
-    name: ③ Artifact · Build
+    name: Artifact · Build
     needs: [setup, test]
     uses: ./.github/workflows/build.yml
     with:
@@ -62,7 +62,7 @@ jobs:
     secrets: inherit
 
   deploy:
-    name: ④ Deploy · Netlify
+    name: Deploy · Netlify
     needs: [build]
     runs-on: ubuntu-latest
     environment:
@@ -81,10 +81,10 @@ jobs:
         run: |
           ls -la
           if [ ! -d "dist" ]; then 
-            echo "❌ dist не найден"
+            echo "dist не найден"
             exit 1
           fi
-          echo "✅ dist найден"
+          echo "dist найден"
 
       - name: Install Netlify CLI
         run: npm install -g netlify-cli --no-fund
@@ -100,7 +100,7 @@ jobs:
             echo "⚡ Функции найдены"
           fi
 
-          echo "🚀 Запускаем: netlify deploy $DEPLOY_ARGS"
+          echo "Запускаем: netlify deploy $DEPLOY_ARGS"
           npx netlify-cli deploy $DEPLOY_ARGS 2>&1 | tee deploy-output.log
 
           URL=$(grep -oP 'https://[a-zA-Z0-9.-]+\.netlify\.app' deploy-output.log | head -1)
@@ -109,7 +109,7 @@ jobs:
           fi
 
           echo "url=$URL" >> $GITHUB_OUTPUT
-          echo "✅ Деплой выполнен: $URL"
+          echo "Деплой выполнен: $URL"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
@@ -119,24 +119,24 @@ jobs:
         run: |
           URL="${{ steps.deploy.outputs.url }}"
           if [ -z "$URL" ] || [ "$URL" = "null" ]; then
-            echo "⚠️ URL не получен"
+            echo "URL не получен"
             exit 0
           fi
 
-          echo "🔍 Проверка: $URL"
+          echo "Проверка: $URL"
           for i in {1..10}; do
             HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" 2>/dev/null || echo "000")
             if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "302" ]; then
-              echo "✅ Сайт доступен"
+              echo "Сайт доступен"
               exit 0
             fi
-            echo "⏳ Попытка $i/10: $HTTP_STATUS"
+            echo "Попытка $i/10: $HTTP_STATUS"
             sleep 5
           done
-          echo "⚠️ Сайт не отвечает"
+          echo "Сайт не отвечает"
 
   release:
-    name: ⑤ Release · GitHub
+    name: Release · GitHub
     needs: deploy
     runs-on: ubuntu-latest
     permissions:

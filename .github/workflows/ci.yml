@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   setup:
-    name: ① Environment · Setup
+    name: Environment · Setup
     runs-on: ubuntu-latest
     outputs:
       cache-key: ${{ steps.final-key.outputs.key }}
@@ -74,7 +74,7 @@ jobs:
         continue-on-error: true
 
   test:
-    name: ② Code · Verify
+    name: Code · Verify
     needs: setup
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     uses: ./.github/workflows/test.yml
@@ -83,7 +83,7 @@ jobs:
     secrets: inherit
 
   build:
-    name: ③ Artifact · Build
+    name: Artifact · Build
     needs: [setup, test]
     if: github.ref == 'refs/heads/main' || github.base_ref == 'main'
     uses: ./.github/workflows/build.yml
@@ -94,7 +94,7 @@ jobs:
     secrets: inherit
 
   deploy-production:
-    name: ④ Deploy · Production
+    name: Deploy · Production
     needs: [setup, build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -113,12 +113,12 @@ jobs:
 
       - name: Verify downloaded artifacts
         run: |
-          echo "🔍 Проверка артефактов:"
+          echo "Проверка артефактов:"
           if [ -d "dist" ]; then
-            echo "✅ dist/ найден"
+            echo "dist/ найден"
             ls -la dist/
           else
-            echo "❌ dist/ не найден!"
+            echo "dist/ не найден!"
             exit 1
           fi
 
@@ -144,26 +144,26 @@ jobs:
           URL="${{ steps.deploy.outputs.url }}"
 
           if [ -z "$URL" ] || [ "$URL" = "null" ]; then
-            echo "⚠️ URL не получен, проверьте деплой вручную"
+            echo "URL не получен, проверьте деплой вручную"
             exit 0
           fi
 
-          echo "🔍 Проверка доступности: $URL"
+          echo "Проверка доступности: $URL"
 
           for i in {1..10}; do
             HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" 2>/dev/null || echo "000")
             if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "302" ]; then
-              echo "✅ Сайт доступен (HTTP $HTTP_STATUS)"
+              echo "Сайт доступен (HTTP $HTTP_STATUS)"
               exit 0
             fi
-            echo "⏳ Попытка $i/10: статус $HTTP_STATUS"
+            echo "Попытка $i/10: статус $HTTP_STATUS"
             sleep 5
           done
 
-          echo "⚠️ Сайт не отвечает, но деплой выполнен"
+          echo "Сайт не отвечает, но деплой выполнен"
 
   release-github:
-    name: ⑤ Release · GitHub
+    name: Release · GitHub
     needs: deploy-production
     if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -232,7 +232,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify-success:
-    name: ⑥ Notify · Success
+    name: Notify · Success
     needs: [deploy-production, release-github]
     if: success()
     runs-on: ubuntu-latest
@@ -246,11 +246,8 @@ jobs:
 
       - name: Display success message
         run: |
-          echo "═══════════════════════════════════════════"
-          echo "   ✅ ДЕПЛОЙ УСПЕШНО ЗАВЕРШЕН"
-          echo "═══════════════════════════════════════════"
-          echo "🌍 URL: ${{ needs.deploy-production.outputs.url }}"
-          echo "📦 Версия: ${{ needs.release-github.outputs.version }}"
-          echo "🔗 Коммит: ${{ github.sha }}"
-          echo "📊 Релиз: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.release-github.outputs.version }}"
-          echo "═══════════════════════════════════════════"
+          echo "ДЕПЛОЙ УСПЕШНО ЗАВЕРШЕН"
+          echo "URL: ${{ needs.deploy-production.outputs.url }}"
+          echo "Версия: ${{ needs.release-github.outputs.version }}"
+          echo "Коммит: ${{ github.sha }}"
+          echo "Релиз: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.release-github.outputs.version }}"
