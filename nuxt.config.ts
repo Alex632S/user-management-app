@@ -11,10 +11,10 @@ export default defineNuxtConfig({
     '@vee-validate/nuxt'
   ],
 
-   nitro: {
+  nitro: {
     preset: 'netlify'
   },
-  
+
   compatibilityDate: '2025-02-22',
 
   typescript: {
