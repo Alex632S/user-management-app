@@ -11,6 +11,9 @@ on:
       version:
         description: "Released version"
         value: ${{ jobs.release.outputs.version }}
+      release_url:
+        description: "URL of the release"
+        value: ${{ jobs.release.outputs.release_url }}
 
 permissions:
   contents: write
@@ -22,11 +25,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.package-version.outputs.version }}
+      release_url: ${{ steps.create-release.outputs.url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -40,21 +45,58 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "version_tag=v$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Generate release notes
-        id: release-notes
+      - name: Get previous tag
+        id: previous-tag
         run: |
-          # Получаем предыдущий тег
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          echo "tag=$PREV_TAG" >> $GITHUB_OUTPUT
 
-          if [ -n "$PREV_TAG" ]; then
-            echo "## Что нового" > RELEASE_NOTES.md
+      - name: Generate conventional changelog
+        id: changelog
+        run: |
+          PREV_TAG="${{ steps.previous-tag.outputs.tag }}"
+
+          # Заголовок с датой
+          echo "# Release v${{ steps.package-version.outputs.version }}" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "**Дата:** $(date +'%Y-%m-%d')" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+
+          if [ -z "$PREV_TAG" ]; then
+            echo " **Первый релиз!**" >> RELEASE_NOTES.md
             echo "" >> RELEASE_NOTES.md
-            git log --pretty=format:"* %s" $PREV_TAG..HEAD >> RELEASE_NOTES.md
-          else
-            echo "## Первый релиз" > RELEASE_NOTES.md
-            echo "" >> RELEASE_NOTES.md
-            echo "* Начальная версия приложения" >> RELEASE_NOTES.md
+            exit 0
           fi
+
+          # Группируем коммиты по типам
+          echo "## Новые возможности" >> RELEASE_NOTES.md
+          git log $PREV_TAG..HEAD --pretty=format:"- %s" --grep="^feat" >> RELEASE_NOTES.md || true
+          echo "" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+
+          echo "## Исправления багов" >> RELEASE_NOTES.md
+          git log $PREV_TAG..HEAD --pretty=format:"- %s" --grep="^fix" >> RELEASE_NOTES.md || true
+          echo "" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+
+          echo "## Документация" >> RELEASE_NOTES.md
+          git log $PREV_TAG..HEAD --pretty=format:"- %s" --grep="^docs" >> RELEASE_NOTES.md || true
+          echo "" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+
+          echo "## Улучшения и рефакторинг" >> RELEASE_NOTES.md
+          git log $PREV_TAG..HEAD --pretty=format:"- %s" --grep="^refactor\|^perf" >> RELEASE_NOTES.md || true
+          echo "" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+
+          echo "## Тесты" >> RELEASE_NOTES.md
+          git log $PREV_TAG..HEAD --pretty=format:"- %s" --grep="^test" >> RELEASE_NOTES.md || true
+          echo "" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+
+          echo "## Критические изменения" >> RELEASE_NOTES.md
+          git log $PREV_TAG..HEAD --pretty=format:"- %s" --grep="BREAKING CHANGE" >> RELEASE_NOTES.md || true
+          echo "" >> RELEASE_NOTES.md
 
       - name: Download build artifacts for release
         uses: actions/download-artifact@v4
@@ -69,6 +111,7 @@ jobs:
           cd ..
 
       - name: Create GitHub Release
+        id: create-release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.package-version.outputs.version }}
@@ -77,8 +120,8 @@ jobs:
           files: |
             build-${{ inputs.sha }}.tar.gz
           draft: false
-          prerelease: false
-          generate_release_notes: true
+          prerelease: ${{ contains(steps.package-version.outputs.version, 'beta') || contains(steps.package-version.outputs.version, 'alpha') }}
+          generate_release_notes: false
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
