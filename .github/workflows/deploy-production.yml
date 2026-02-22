@@ -89,8 +89,8 @@ jobs:
       - name: Install Netlify CLI
         run: npm install -g netlify-cli --no-fund
 
-      # ⭐ ВАШ РАБОЧИЙ КОД - НИКАКИХ СТОРОННИХ ДЕЙСТВИЙ
       - name: Deploy to Netlify
+        uses: actions/setup-node@v4
         id: deploy
         run: |
           DEPLOY_ARGS="--dir=dist --prod --message=Deploy ${{ github.sha }}"
