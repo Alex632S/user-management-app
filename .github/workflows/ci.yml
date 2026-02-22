@@ -11,11 +11,10 @@ on:
     paths-ignore:
       - "**.md"
 
-# ⭐ Исправленные permissions - добавляем write для contents
 permissions:
-  contents: write # ⭐ Изменено с read на write (нужно для release)
-  id-token: write # Нужно для deploy
-  pull-requests: read # Оставляем read для PR
+  contents: write
+  id-token: write
+  pull-requests: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -121,10 +120,7 @@ jobs:
     steps:
       - name: Display success message
         run: |
-          echo "═══════════════════════════════════════════"
-          echo "   ✅ ДЕПЛОЙ УСПЕШНО ЗАВЕРШЕН"
-          echo "═══════════════════════════════════════════"
+          echo "Deploy success!"
           echo "URL: ${{ needs.deploy.outputs.url }}"
           echo "Версия: v${{ needs.release.outputs.version }}"
           echo "Коммит: ${{ github.sha }}"
-          echo "═══════════════════════════════════════════"
