@@ -1,89 +1,215 @@
-deploy:
-  name: ④ Deploy · Netlify
-  needs: [setup, test, build]
-  runs-on: ubuntu-latest
-  environment:
-    name: production
-    url: ${{ steps.deploy.outputs.url }}
-  steps:
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build-production-${{ github.sha }}
-        path: .
+name: Deploy Production
 
-    - name: Verify downloaded artifacts
-      run: |
-        echo "🔍 Проверка артефактов:"
-        ls -la
-        if [ ! -d "dist" ]; then
-          echo "❌ dist/ не найден!"
-          exit 1
-        fi
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to deploy"
+        required: false
 
-    - name: Install Netlify CLI
-      run: npm install -g netlify-cli --no-fund
+permissions:
+  contents: write
+  id-token: write
 
-    - name: Deploy to Netlify
-      id: deploy
-      run: |
-        # Формируем параметры деплоя (как в вашем рабочем коде)
-        DEPLOY_ARGS="--dir=dist --prod --message=Deploy ${{ github.sha }}"
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
 
-        # Добавляем функции если есть
-        if [ -d ".netlify/functions-internal" ]; then
-          DEPLOY_ARGS="$DEPLOY_ARGS --functions=.netlify/functions-internal"
-          echo "⚡ Функции будут загружены из .netlify/functions-internal"
-        fi
+jobs:
+  setup:
+    name: ① Environment · Setup
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.final-key.outputs.key }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-        echo "🚀 Запускаем деплой: netlify deploy $DEPLOY_ARGS"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
 
-        # Выполняем деплой и сохраняем вывод
-        npx netlify-cli deploy $DEPLOY_ARGS 2>&1 | tee deploy-output.log
+      - name: Calculate cache key
+        id: calc-key
+        run: |
+          KEY="${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}"
+          echo "key=$KEY" >> $GITHUB_OUTPUT
 
-        # Парсим URL из вывода
-        URL=$(cat deploy-output.log | grep -oP 'https://[a-zA-Z0-9.-]+\.netlify\.app' | head -1)
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ steps.calc-key.outputs.key }}
 
-        # Если не нашли, пробуем другой паттерн
-        if [ -z "$URL" ]; then
-          URL=$(cat deploy-output.log | grep -oP 'https://[^\s]+' | grep netlify | head -1)
-        fi
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci --prefer-offline --no-audit
 
-        # Сохраняем URL
-        echo "url=$URL" >> $GITHUB_OUTPUT
-        echo "✅ Деплой выполнен"
-        echo "🌍 URL: $URL"
+      - name: Set final cache key
+        id: final-key
+        run: echo "key=${{ steps.calc-key.outputs.key }}" >> $GITHUB_OUTPUT
 
-        # Всегда выходим с успехом, даже если URL не нашелся
-        exit 0
-      env:
-        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+  test:
+    name: ② Test · Suite
+    needs: setup
+    uses: ./.github/workflows/test.yml
+    with:
+      cache-key: ${{ needs.setup.outputs.cache-key }}
+    secrets: inherit
 
-    - name: Health check
-      if: success()
-      run: |
-        URL="${{ steps.deploy.outputs.url }}"
+  build:
+    name: ③ Artifact · Build
+    needs: [setup, test]
+    uses: ./.github/workflows/build.yml
+    with:
+      cache-key: ${{ needs.setup.outputs.cache-key }}
+      environment: production
+      upload-artifacts: true
+    secrets: inherit
 
-        if [ -z "$URL" ] || [ "$URL" = "null" ]; then
-          echo "⚠️ URL не получен, но деплой вероятно успешен"
+  deploy:
+    name: ④ Deploy · Production
+    needs: [setup, test, build]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-production-${{ github.sha }}
+          path: .
+
+      - name: Verify downloaded artifacts
+        run: |
+          echo "🔍 Проверка загруженных артефактов:"
+          ls -la
+
+          if [ -d "dist" ]; then
+            echo "✅ dist/ существует"
+          else
+            echo "❌ dist/ не найден!"
+            exit 1
+          fi
+
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli --no-fund
+
+      - name: Deploy to Netlify
+        id: deploy
+        run: |
+          # Определяем параметры деплоя (ВАШ РАБОЧИЙ КОД)
+          DEPLOY_ARGS="--dir=dist --prod --message=Deploy ${{ github.sha }}"
+
+          # Добавляем функции если есть
+          if [ -d ".netlify/functions-internal" ]; then
+            DEPLOY_ARGS="$DEPLOY_ARGS --functions=.netlify/functions-internal"
+            echo "⚡ Функции будут загружены из .netlify/functions-internal"
+          fi
+
+          echo "🚀 Запускаем деплой: netlify deploy $DEPLOY_ARGS"
+
+          # Выполняем деплой и сохраняем вывод
+          npx netlify-cli deploy $DEPLOY_ARGS 2>&1 | tee deploy-output.log
+
+          # Парсим URL из вывода
+          URL=$(cat deploy-output.log | grep -oP 'https://[a-zA-Z0-9.-]+\.netlify\.app' | head -1)
+
+          # Если не нашли, пробуем другой паттерн
+          if [ -z "$URL" ]; then
+            URL=$(cat deploy-output.log | grep -oP 'https://[^\s]+' | grep netlify | head -1)
+          fi
+
+          # Сохраняем URL
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+          echo "✅ Деплой выполнен"
+          echo "🌍 URL: $URL"
+
+          # Всегда выходим с успехом, даже если URL не нашелся
           exit 0
-        fi
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
-        echo "🔍 Проверяем доступность: $URL"
+      - name: Health check
+        if: success()
+        run: |
+          URL="${{ steps.deploy.outputs.url }}"
 
-        for i in {1..10}; do
-          echo "⏳ Попытка $i/10..."
-          
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" 2>/dev/null || echo "000")
-          
-          if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "302" ]; then
-            echo "✅ Сайт доступен! (HTTP $HTTP_STATUS)"
+          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            echo "⚠️ URL не получен, но деплой вероятно успешен"
             exit 0
           fi
-          
-          echo "⏳ Статус: $HTTP_STATUS, ждем 5 секунд..."
-          sleep 5
-        done
 
-        echo "⚠️ Сайт не отвечает, но деплой выполнен"
+          echo "🔍 Проверяем доступность: $URL"
+
+          for i in {1..10}; do
+            echo "⏳ Попытка $i/10..."
+            
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" 2>/dev/null || echo "000")
+            
+            if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "302" ]; then
+              echo "✅ Сайт доступен! (HTTP $HTTP_STATUS)"
+              exit 0
+            fi
+            
+            echo "⏳ Статус: $HTTP_STATUS, ждем 5 секунд..."
+            sleep 5
+          done
+
+          echo "⚠️ Сайт не отвечает, но деплой выполнен. Проверьте вручную."
+
+  release:
+    name: ⑤ Release · GitHub
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from package.json
+        id: package-version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.package-version.outputs.version }}
+          name: Release v${{ steps.package-version.outputs.version }}
+          generate_release_notes: true
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    name: ⑥ Notify · Success
+    needs: [deploy, release]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Display success message
+        run: |
+          echo "═══════════════════════════════════════════"
+          echo "   ✅ ДЕПЛОЙ УСПЕШНО ЗАВЕРШЕН"
+          echo "═══════════════════════════════════════════"
+          echo "🌍 URL: ${{ needs.deploy.outputs.url }}"
+          echo "📦 Версия: v${{ needs.release.outputs.version }}"
+          echo "🔗 Коммит: ${{ github.sha }}"
+          echo "═══════════════════════════════════════════"
