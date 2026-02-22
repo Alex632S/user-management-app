@@ -80,7 +80,11 @@ jobs:
       - name: Verify artifacts
         run: |
           ls -la
-          if [ ! -d "dist" ]; then exit 1; fi
+          if [ ! -d "dist" ]; then 
+            echo "❌ dist не найден"
+            exit 1
+          fi
+          echo "✅ dist найден"
 
       - name: Install Netlify CLI
         run: npm install -g netlify-cli --no-fund
@@ -90,28 +94,46 @@ jobs:
         id: deploy
         run: |
           DEPLOY_ARGS="--dir=dist --prod --message=Deploy ${{ github.sha }}"
+
           if [ -d ".netlify/functions-internal" ]; then
             DEPLOY_ARGS="$DEPLOY_ARGS --functions=.netlify/functions-internal"
+            echo "⚡ Функции найдены"
           fi
+
+          echo "🚀 Запускаем: netlify deploy $DEPLOY_ARGS"
           npx netlify-cli deploy $DEPLOY_ARGS 2>&1 | tee deploy-output.log
+
           URL=$(grep -oP 'https://[a-zA-Z0-9.-]+\.netlify\.app' deploy-output.log | head -1)
           if [ -z "$URL" ]; then
             URL=$(grep -oP 'https://[^\s]+' deploy-output.log | grep netlify | head -1)
           fi
+
           echo "url=$URL" >> $GITHUB_OUTPUT
-          echo "✅ Deployed to $URL"
+          echo "✅ Деплой выполнен: $URL"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
       - name: Health check
+        if: success()
         run: |
           URL="${{ steps.deploy.outputs.url }}"
-          if [ -z "$URL" ] || [ "$URL" = "null" ]; then exit 0; fi
+          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            echo "⚠️ URL не получен"
+            exit 0
+          fi
+
+          echo "🔍 Проверка: $URL"
           for i in {1..10}; do
-            curl -s -f -o /dev/null "$URL" && echo "OK" && exit 0 || sleep 5
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" 2>/dev/null || echo "000")
+            if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "302" ]; then
+              echo "✅ Сайт доступен"
+              exit 0
+            fi
+            echo "⏳ Попытка $i/10: $HTTP_STATUS"
+            sleep 5
           done
-          echo "⚠️ Health check failed"
+          echo "⚠️ Сайт не отвечает"
 
   release:
     name: ⑤ Release · GitHub
