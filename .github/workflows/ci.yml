@@ -11,8 +11,10 @@ on:
     paths-ignore:
       - "**.md"
 
+# ⭐ Правильные permissions для всего workflow
 permissions:
   contents: read
+  id-token: write # Нужно для deploy.yml и release.yml
   pull-requests: read
 
 concurrency:
@@ -93,6 +95,7 @@ jobs:
       upload-artifacts: true
     secrets: inherit
 
+  # ⭐ Деплой только на main ветке при push
   deploy:
     name: Deploy · Production
     needs: [setup, build]
@@ -101,7 +104,9 @@ jobs:
     with:
       sha: ${{ github.sha }}
     secrets: inherit
+    # Права наследуются из родительского workflow
 
+  # ⭐ Релиз только после успешного деплоя на main
   release:
     name: Release · GitHub
     needs: deploy
@@ -110,7 +115,9 @@ jobs:
     with:
       sha: ${{ github.sha }}
     secrets: inherit
+    # Права наследуются из родительского workflow
 
+  # ⭐ Уведомление только после успешных деплоя и релиза
   notify:
     name: Notify · Success
     needs: [deploy, release]
@@ -119,7 +126,10 @@ jobs:
     steps:
       - name: Display success message
         run: |
-          echo "ДЕПЛОЙ УСПЕШНО ЗАВЕРШЕН"
+          echo "═══════════════════════════════════════════"
+          echo "   ✅ ДЕПЛОЙ УСПЕШНО ЗАВЕРШЕН"
+          echo "═══════════════════════════════════════════"
           echo "URL: ${{ needs.deploy.outputs.url }}"
           echo "Версия: v${{ needs.release.outputs.version }}"
           echo "Коммит: ${{ github.sha }}"
+          echo "═══════════════════════════════════════════"
