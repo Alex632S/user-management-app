@@ -1,12 +1,11 @@
 import { defineNuxtConfig } from 'nuxt/config'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineNuxtConfig({
   devtools: { enabled: true },
 
   srcDir: 'app/',
-
   modules: [
-    '@netlify/nuxt',
     '@pinia/nuxt',
     ['@vee-validate/nuxt', {
       autoImports: true,
@@ -18,6 +17,13 @@ export default defineNuxtConfig({
       }
     }]
   ],
+
+  css: ['./app/assets/css/main.css'],
+  vite: {
+    plugins: [
+      tailwindcss(),
+    ],
+  },
 
   nitro: {
     preset: 'netlify'

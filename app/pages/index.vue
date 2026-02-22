@@ -1,55 +1,149 @@
 <template>
-  <div class="container">
-    <h1>User Management</h1>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Заголовок -->
+    <h1 class="text-3xl font-bold text-gray-900 mb-8">
+      User Management
+    </h1>
 
-    <div v-if="loading">
-      Loading...
+    <!-- Состояние загрузки -->
+    <div v-if="loading" class="text-center py-12">
+      <div class="inline-flex items-center space-x-3 text-gray-600">
+        <svg class="animate-spin h-6 w-6 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-lg">Загрузка пользователей...</span>
+      </div>
     </div>
-    <div v-else-if="error">
-      {{ error }}
+
+    <!-- Ошибка -->
+    <div v-else-if="error" class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-red-700">{{ error }}</p>
+        </div>
+      </div>
     </div>
+
+    <!-- Контент -->
     <div v-else>
-      <div class="stats">
-        <div class="stat-card">
-          <h3>Total Users</h3>
-          <p>{{ users.length }}</p>
+      <!-- Статистика -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <!-- Total Users -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
+            Всего пользователей
+          </h3>
+          <p class="text-3xl font-bold text-gray-900">{{ users.length }}</p>
         </div>
-        <div class="stat-card">
-          <h3>Active</h3>
-          <p>{{ activeUsers }}</p>
+
+        <!-- Active Users -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
+            Активные
+          </h3>
+          <p class="text-3xl font-bold text-green-600">{{ activeUsers }}</p>
         </div>
-        <div class="stat-card">
-          <h3>Admins</h3>
-          <p>{{ adminCount }}</p>
+
+        <!-- Admins -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
+            Администраторы
+          </h3>
+          <p class="text-3xl font-bold text-purple-600">{{ adminCount }}</p>
         </div>
       </div>
 
-      <div class="actions">
-        <button class="btn" @click="testAPI">
-          Refresh Users
-        </button>
-
-        <button class="btn btn-primary" @click="testCreate">
-          Test Create
+      <!-- Кнопки действий -->
+      <div class="flex flex-wrap gap-3 mb-8">
+        <button
+          @click="testAPI"
+          class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Обновить
         </button>
 
         <button
-          class="btn btn-danger"
-          :disabled="!users.length"
-          @click="testDelete"
+          @click="testCreate"
+          class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
         >
-          Test Delete First User
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Создать
+        </button>
+
+        <button
+          @click="testDelete"
+          :disabled="!users.length"
+          class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Удалить первого
         </button>
       </div>
 
-      <div class="user-list">
-        <div v-for="user in users" :key="user.id" class="user-card">
-          <img :src="user.avatar" alt="" class="avatar">
-          <div class="info">
-            <h3>{{ user.name }}</h3>
-            <p>{{ user.email }}</p>
-            <span class="badge" :class="user.role">{{ user.role }}</span>
-            <span class="badge" :class="user.status">{{ user.status }}</span>
+      <!-- Список пользователей -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          v-for="user in users"
+          :key="user.id"
+          class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+        >
+          <div class="p-6">
+            <div class="flex items-start space-x-4">
+              <!-- Аватар -->
+              <img
+                :src="user.avatar"
+                :alt="user.name"
+                class="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+              />
+              
+              <!-- Информация -->
+              <div class="flex-1 min-w-0">
+                <h3 class="text-lg font-semibold text-gray-900 truncate">
+                  {{ user.name }}
+                </h3>
+                <p class="text-sm text-gray-500 truncate mb-2">
+                  {{ user.email }}
+                </p>
+                
+                <!-- Бейджи -->
+                <div class="flex flex-wrap gap-2">
+                  <!-- Роль -->
+                  <span
+                    :class="[
+                      'px-2 py-1 text-xs font-medium rounded-full',
+                      roleClasses[user.role] || 'bg-gray-100 text-gray-800'
+                    ]"
+                  >
+                    {{ user.role }}
+                  </span>
+                  
+                  <!-- Статус -->
+                  <span
+                    :class="[
+                      'px-2 py-1 text-xs font-medium rounded-full',
+                      user.status === 'active' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    ]"
+                  >
+                    {{ user.status === 'active' ? 'Активен' : 'Заблокирован' }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -60,6 +154,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import type { User } from '../../types/user'
+
+// Классы для разных ролей
+const roleClasses: Record<string, string> = {
+  admin: 'bg-purple-100 text-purple-800',
+  editor: 'bg-blue-100 text-blue-800',
+  viewer: 'bg-gray-100 text-gray-800'
+}
 
 const users = ref<User[]>([])
 const loading = ref(false)
@@ -141,95 +242,3 @@ onMounted(() => {
   testAPI()
 })
 </script>
-
-<style scoped>
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin: 20px 0;
-}
-
-.stat-card {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.actions {
-  display: flex;
-  gap: 10px;
-  margin: 20px 0;
-}
-
-.btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: #3b82f6;
-  color: white;
-}
-
-.btn-danger {
-  background: #ef4444;
-  color: white;
-}
-
-.user-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.user-card {
-  display: flex;
-  gap: 15px;
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.info {
-  flex: 1;
-}
-
-.badge {
-  display: inline-block;
-  padding: 4px 8px;
-  margin-right: 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.badge.admin { background: #ef4444; color: white; }
-.badge.editor { background: #3b82f6; color: white; }
-.badge.viewer { background: #10b981; color: white; }
-.badge.active { background: #10b981; color: white; }
-.badge.blocked { background: #6b7280; color: white; }
-</style>
