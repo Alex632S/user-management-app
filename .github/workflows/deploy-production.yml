@@ -42,13 +42,14 @@ jobs:
           KEY="${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}"
           echo "key=$KEY" >> $GITHUB_OUTPUT
 
-      - name: Restore cache
+      - name: Cache node_modules
+        id: cache
         uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ steps.calc-key.outputs.key }}
 
-      - name: Install dependencies
+      - name: Install dependencies (if no cache)
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci --prefer-offline --no-audit
 
@@ -75,7 +76,7 @@ jobs:
     secrets: inherit
 
   deploy:
-    name: ④ Deploy · Production
+    name: ④ Deploy · Netlify
     needs: [setup, test, build]
     runs-on: ubuntu-latest
     environment:
@@ -95,12 +96,11 @@ jobs:
           echo "🔍 Проверка загруженных артефактов:"
           ls -la
 
-          if [ -d "dist" ]; then
-            echo "✅ dist/ существует"
-          else
+          if [ ! -d "dist" ]; then
             echo "❌ dist/ не найден!"
             exit 1
           fi
+          echo "✅ dist/ существует"
 
       - name: Install Netlify CLI
         run: npm install -g netlify-cli --no-fund
@@ -108,10 +108,9 @@ jobs:
       - name: Deploy to Netlify
         id: deploy
         run: |
-          # Определяем параметры деплоя (ВАШ РАБОЧИЙ КОД)
+          # ВАШ РАБОЧИЙ КОД - ТОЧНО ТАК ЖЕ КАК В MAIN.YML
           DEPLOY_ARGS="--dir=dist --prod --message=Deploy ${{ github.sha }}"
 
-          # Добавляем функции если есть
           if [ -d ".netlify/functions-internal" ]; then
             DEPLOY_ARGS="$DEPLOY_ARGS --functions=.netlify/functions-internal"
             echo "⚡ Функции будут загружены из .netlify/functions-internal"
@@ -122,21 +121,18 @@ jobs:
           # Выполняем деплой и сохраняем вывод
           npx netlify-cli deploy $DEPLOY_ARGS 2>&1 | tee deploy-output.log
 
-          # Парсим URL из вывода
+          # Парсим URL
           URL=$(cat deploy-output.log | grep -oP 'https://[a-zA-Z0-9.-]+\.netlify\.app' | head -1)
 
-          # Если не нашли, пробуем другой паттерн
           if [ -z "$URL" ]; then
             URL=$(cat deploy-output.log | grep -oP 'https://[^\s]+' | grep netlify | head -1)
           fi
 
-          # Сохраняем URL
           echo "url=$URL" >> $GITHUB_OUTPUT
-
           echo "✅ Деплой выполнен"
           echo "🌍 URL: $URL"
 
-          # Всегда выходим с успехом, даже если URL не нашелся
+          # Всегда выходим с успехом
           exit 0
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
@@ -155,20 +151,16 @@ jobs:
           echo "🔍 Проверяем доступность: $URL"
 
           for i in {1..10}; do
-            echo "⏳ Попытка $i/10..."
-            
             HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" 2>/dev/null || echo "000")
-            
             if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "302" ]; then
               echo "✅ Сайт доступен! (HTTP $HTTP_STATUS)"
               exit 0
             fi
-            
-            echo "⏳ Статус: $HTTP_STATUS, ждем 5 секунд..."
+            echo "⏳ Попытка $i/10: статус $HTTP_STATUS"
             sleep 5
           done
 
-          echo "⚠️ Сайт не отвечает, но деплой выполнен. Проверьте вручную."
+          echo "⚠️ Сайт не отвечает, проверьте вручную"
 
   release:
     name: ⑤ Release · GitHub
@@ -177,12 +169,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Get version from package.json
+      - name: Get version
         id: package-version
         run: |
           VERSION=$(node -p "require('./package.json').version")
@@ -204,8 +195,7 @@ jobs:
     if: success()
     runs-on: ubuntu-latest
     steps:
-      - name: Display success message
-        run: |
+      - run: |
           echo "═══════════════════════════════════════════"
           echo "   ✅ ДЕПЛОЙ УСПЕШНО ЗАВЕРШЕН"
           echo "═══════════════════════════════════════════"
