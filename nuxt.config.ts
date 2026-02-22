@@ -1,8 +1,9 @@
 import { defineNuxtConfig } from 'nuxt/config'
 
 export default defineNuxtConfig({
+  compatibilityDate: '2025-02-22',
   devtools: { enabled: true },
-
+  ssr: true,
   srcDir: 'app/',
 
   modules: [
@@ -14,8 +15,6 @@ export default defineNuxtConfig({
   nitro: {
     preset: 'netlify'
   },
-
-  compatibilityDate: '2025-02-22',
 
   typescript: {
     strict: true,
@@ -37,7 +36,5 @@ export default defineNuxtConfig({
   alias: {
     '~': '../',
     '@': './'
-  },
-
-  ssr: true
+  }
 })
