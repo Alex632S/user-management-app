@@ -1,20 +1,29 @@
 import { defineNuxtConfig } from 'nuxt/config'
 
 export default defineNuxtConfig({
-  compatibilityDate: '2025-02-22',
   devtools: { enabled: true },
-  ssr: true,
+
   srcDir: 'app/',
 
   modules: [
     '@netlify/nuxt',
     '@pinia/nuxt',
-    '@vee-validate/nuxt'
+    ['@vee-validate/nuxt', {
+      autoImports: true,
+      componentNames: {
+        Form: 'VForm',
+        Field: 'VField',
+        FieldArray: 'VFieldArray',
+        ErrorMessage: 'VErrorMessage'
+      }
+    }]
   ],
 
   nitro: {
     preset: 'netlify'
   },
+
+  compatibilityDate: '2025-02-22',
 
   typescript: {
     strict: true,
@@ -26,15 +35,11 @@ export default defineNuxtConfig({
         moduleResolution: 'Bundler',
         types: ['node', 'vite/client'],
         paths: {
-          '~/*': ['../*'],
           '@/*': ['./*']
         }
       }
     }
   },
 
-  alias: {
-    '~': '../',
-    '@': './'
-  }
+  ssr: true
 })

@@ -9,6 +9,13 @@
   NODE_VERSION = "20"
   NITRO_PRESET = "netlify"
 
+[dev]
+  functions = false
+  edge_functions = false
+  blobs = false
+  aiGateway = false
+  geolocation = false
+
 [context.production]
   publish = "dist"
   functions = ".netlify/functions-internal"
