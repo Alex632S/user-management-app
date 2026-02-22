@@ -124,7 +124,7 @@ jobs:
 
       - name: Deploy to Netlify
         id: deploy
-        uses: nwtgck/actions-netlify@v3.0
+        uses: actions/checkout@v4
         with:
           publish-dir: ./dist
           functions-dir: ./.netlify/functions-internal
