@@ -11,11 +11,11 @@ on:
     paths-ignore:
       - "**.md"
 
-# ⭐ Правильные permissions для всего workflow
+# ⭐ Исправленные permissions - добавляем write для contents
 permissions:
-  contents: read
-  id-token: write # Нужно для deploy.yml и release.yml
-  pull-requests: read
+  contents: write # ⭐ Изменено с read на write (нужно для release)
+  id-token: write # Нужно для deploy
+  pull-requests: read # Оставляем read для PR
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -95,7 +95,6 @@ jobs:
       upload-artifacts: true
     secrets: inherit
 
-  # ⭐ Деплой только на main ветке при push
   deploy:
     name: Deploy · Production
     needs: [setup, build]
@@ -104,9 +103,7 @@ jobs:
     with:
       sha: ${{ github.sha }}
     secrets: inherit
-    # Права наследуются из родительского workflow
 
-  # ⭐ Релиз только после успешного деплоя на main
   release:
     name: Release · GitHub
     needs: deploy
@@ -115,9 +112,7 @@ jobs:
     with:
       sha: ${{ github.sha }}
     secrets: inherit
-    # Права наследуются из родительского workflow
 
-  # ⭐ Уведомление только после успешных деплоя и релиза
   notify:
     name: Notify · Success
     needs: [deploy, release]
