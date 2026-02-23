@@ -1,50 +1,56 @@
 import { defineNuxtConfig } from 'nuxt/config'
-import tailwindcss from '@tailwindcss/vite'
 
 export default defineNuxtConfig({
   devtools: { enabled: true },
 
   srcDir: 'app/',
   modules: [
-    '@pinia/nuxt',
-    ['@vee-validate/nuxt', {
-      autoImports: true,
-      componentNames: {
-        Form: 'VForm',
-        Field: 'VField',
-        FieldArray: 'VFieldArray',
-        ErrorMessage: 'VErrorMessage'
+    [
+      '@nuxt/eslint',
+      {
+        config: {
+          stylistic: {
+            semi: false,
+            singleQuote: true,
+            commaDangle: 'none',
+            printWidth: 100,
+            bracketSpacing: true,
+            arrowParens: true
+          }
+        }
       }
-    }]
+    ],
+    '@pinia/nuxt',
+    [
+      '@vee-validate/nuxt',
+      {
+        autoImports: true,
+        componentNames: {
+          Form: 'VForm',
+          Field: 'VField',
+          FieldArray: 'VFieldArray',
+          ErrorMessage: 'VErrorMessage'
+        }
+      }
+    ]
   ],
 
   css: ['./app/assets/css/main.css'],
+
   vite: {
-    plugins: [
-      tailwindcss(),
-    ],
+    plugins: []
   },
 
   nitro: {
     preset: 'netlify'
   },
 
-  compatibilityDate: '2025-02-22',
+  compatibilityDate: '2024-07-03',
 
   typescript: {
     strict: true,
     typeCheck: true,
-    shim: false,
-    tsConfig: {
-      compilerOptions: {
-        module: 'ESNext',
-        moduleResolution: 'Bundler',
-        types: ['node', 'vite/client'],
-        paths: {
-          '@/*': ['./*']
-        }
-      }
-    }
+    shim: false
   },
 
   ssr: true
