@@ -21,6 +21,7 @@ export default defineNuxtConfig({
       }
     ],
     '@pinia/nuxt',
+    '@nuxtjs/tailwindcss',
     [
       '@vee-validate/nuxt',
       {
@@ -34,8 +35,11 @@ export default defineNuxtConfig({
       }
     ]
   ],
-
-  css: ['./app/assets/css/main.css'],
+  tailwindcss: {
+    cssPath: '~/assets/css/tailwind.css',
+    exposeConfig: false,
+    viewer: true
+  },
 
   vite: {
     plugins: []
