@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="ru" class="h-full bg-gray-50">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sidebar + Карточка пользователя (светлая тема)</title>
+    <!-- Подключаем Inter font -->
+    <link rel="preconnect" href="https://rsms.me/" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    <!-- Подключаем TailwindCSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключаем кастомные элементы Tailwind Plus -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@insiders"
+      type="module"
+    ></script>
+    <style>
+      body:has(dialog[open]) {
+        overflow: hidden;
+      }
+
+      /* Стили для скролла */
+      .custom-scroll::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scroll::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb:hover {
+        background: #a1a1a1;
+      }
+    </style>
+  </head>
+  <body class="h-full bg-gray-50 antialiased">
+    <div class="h-full overflow-y-auto bg-gray-50">
+      <!-- ============================================ -->
+      <!-- МОБИЛЬНАЯ: ВЫДВИЖНАЯ ПАНЕЛЬ -->
+      <!-- ============================================ -->
+      <el-dialog>
+        <dialog
+          id="sidebar-mobile"
+          class="backdrop:bg-transparent hidden lg:hidden"
+        >
+          <el-dialog-backdrop
+            class="fixed inset-0 bg-gray-500/50 transition-opacity duration-300 ease-linear data-[closed]:opacity-0"
+          ></el-dialog-backdrop>
+
+          <div tabindex="0" class="fixed inset-0 flex focus:outline-none">
+            <el-dialog-panel
+              class="relative mr-16 flex w-full max-w-xs flex-1 transform transition-all duration-300 ease-in-out data-[closed]:-translate-x-full"
+            >
+              <div
+                class="absolute left-full top-0 flex w-16 justify-center pt-5 duration-300 ease-in-out data-[closed]:opacity-0"
+              >
+                <button
+                  type="button"
+                  command="close"
+                  commandfor="sidebar-mobile"
+                  class="-m-2.5 p-2.5"
+                >
+                  <span class="sr-only">Закрыть sidebar</span>
+                  <svg
+                    class="h-6 w-6 text-gray-900"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- САЙДБАР МОБИЛЬНЫЙ (светлая тема) -->
+              <div
+                class="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4 ring-1 ring-gray-200"
+              >
+                <div class="flex h-16 shrink-0 items-center">
+                  <img
+                    class="h-8 w-auto"
+                    src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
+                    alt="Your Company"
+                  />
+                </div>
+                <nav class="flex flex-1 flex-col">
+                  <ul role="list" class="flex flex-1 flex-col gap-y-7">
+                    <li>
+                      <ul role="list" class="-mx-2 space-y-1">
+                        <li>
+                          <a
+                            href="#"
+                            class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                          >
+                            <svg
+                              class="h-6 w-6 shrink-0 text-gray-500 group-hover:text-gray-900"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke-width="1.5"
+                              stroke="currentColor"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"
+                              />
+                            </svg>
+                            Projects
+                          </a>
+                        </li>
+                        <li>
+                          <a
+                            href="#"
+                            class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-white bg-indigo-600"
+                          >
+                            <svg
+                              class="h-6 w-6 shrink-0 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke-width="1.5"
+                              stroke="currentColor"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M21.75 17.25v-.228a4.5 4.5 0 0 0-.12-1.03l-2.268-9.64a3.375 3.375 0 0 0-3.285-2.602H7.923a3.375 3.375 0 0 0-3.285 2.602l-2.268 9.64a4.5 4.5 0 0 0-.12 1.03v.228m19.5 0a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3m19.5 0a3 3 0 0 0-3-3H5.25a3 3 0 0 0-3 3m16.5 0h.008v.008h-.008v-.008Zm-3 0h.008v.008h-.008v-.008Z"
+                              />
+                            </svg>
+                            Deployments
+                          </a>
+                        </li>
+                      </ul>
+                    </li>
+                    <li class="mt-auto">
+                      <a
+                        href="#"
+                        class="flex -mx-6 items-center gap-x-4 px-6 py-3 text-sm/6 font-semibold text-gray-900 hover:bg-gray-100"
+                      >
+                        <img
+                          class="h-8 w-8 rounded-full bg-gray-300"
+                          src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                          alt=""
+                        />
+                        <span class="sr-only">Your profile</span>
+                        <span aria-hidden="true">Tom Cook</span>
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+              </div>
+            </el-dialog-panel>
+          </div>
+        </dialog>
+      </el-dialog>
+
+      <!-- ============================================ -->
+      <!-- СТАТИЧЕСКАЯ ПАНЕЛЬ ДЛЯ ДЕСКТОПА (светлая тема) -->
+      <!-- ============================================ -->
+      <div
+        class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col"
+      >
+        <div
+          class="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4 shadow-sm ring-1 ring-gray-200"
+        >
+          <div class="flex h-16 shrink-0 items-center">
+            <img
+              class="h-8 w-auto"
+              src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
+              alt="Your Company"
+            />
+          </div>
+          <nav class="flex flex-1 flex-col">
+            <ul role="list" class="flex flex-1 flex-col gap-y-7">
+              <li>
+                <ul role="list" class="-mx-2 space-y-1">
+                  <li>
+                    <a
+                      href="#"
+                      class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    >
+                      <svg
+                        class="h-6 w-6 shrink-0 text-gray-500 group-hover:text-gray-900"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"
+                        />
+                      </svg>
+                      Projects
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-white bg-indigo-600"
+                    >
+                      <svg
+                        class="h-6 w-6 shrink-0 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M21.75 17.25v-.228a4.5 4.5 0 0 0-.12-1.03l-2.268-9.64a3.375 3.375 0 0 0-3.285-2.602H7.923a3.375 3.375 0 0 0-3.285 2.602l-2.268 9.64a4.5 4.5 0 0 0-.12 1.03v.228m19.5 0a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3m19.5 0a3 3 0 0 0-3-3H5.25a3 3 0 0 0-3 3m16.5 0h.008v.008h-.008v-.008Zm-3 0h.008v.008h-.008v-.008Z"
+                        />
+                      </svg>
+                      Deployments
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="mt-auto">
+                <a
+                  href="#"
+                  class="flex -mx-6 items-center gap-x-4 px-6 py-3 text-sm/6 font-semibold text-gray-900 hover:bg-gray-100"
+                >
+                  <img
+                    class="h-8 w-8 rounded-full bg-gray-300"
+                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                    alt=""
+                  />
+                  <span class="sr-only">Your profile</span>
+                  <span aria-hidden="true">Tom Cook</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- ОСНОВНОЙ КОНТЕНТ (светлая тема) -->
+      <!-- ============================================ -->
+      <div class="lg:pl-72">
+        <!-- ХЕДЕР С ЗАГОЛОВКОМ (хлебные крошки перенесены вниз) -->
+        <div
+          class="sticky top-0 z-40 border-b border-gray-200 bg-white px-4 py-4 shadow-sm sm:px-6 lg:px-8"
+        >
+          <!-- Заголовок раздела -->
+          <h1 class="text-2xl font-bold tracking-tight text-gray-900">
+            Участники команды
+          </h1>
+          <p class="mt-1 text-sm text-gray-500">
+            Просмотр информации о членах команды и их активности
+          </p>
+
+          <!-- Хлебные крошки (теперь под описанием) -->
+          <nav
+            class="mt-3 flex items-center gap-2 text-sm border-t border-gray-100 pt-3"
+            aria-label="Breadcrumb"
+          >
+            <a
+              href="#"
+              class="font-mono text-xs font-medium uppercase tracking-wider text-gray-500 hover:text-indigo-600 transition-colors"
+            >
+              Dashboard
+            </a>
+            <svg
+              class="h-4 w-4 text-gray-400"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <a
+              href="#"
+              class="font-mono text-xs font-medium uppercase tracking-wider text-gray-500 hover:text-indigo-600 transition-colors"
+            >
+              Team
+            </a>
+            <svg
+              class="h-4 w-4 text-gray-400"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <span
+              class="font-mono text-xs font-medium uppercase tracking-wider text-indigo-600"
+            >
+              Team Members
+            </span>
+          </nav>
+        </div>
+
+        <!-- ОСНОВНАЯ ОБЛАСТЬ: ПОИСК + СПИСОК ПОЛЬЗОВАТЕЛЕЙ (1/3) + КАРТОЧКА (2/3) -->
+        <div class="flex">
+          <!-- Левая часть: Поиск + Список пользователей (1/3 ширины) -->
+          <div class="w-1/3 border-r border-gray-200">
+            <!-- ПОИСК -->
+            <div
+              class="sticky top-[132px] z-30 bg-gray-50 px-4 py-3 sm:px-6 lg:px-8 border-b border-gray-200"
+            >
+              <div class="relative">
+                <div
+                  class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
+                >
+                  <svg
+                    class="h-5 w-5 text-gray-400"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Поиск участников..."
+                  class="w-full rounded-lg bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-500 transition-all"
+                  id="search-users"
+                />
+              </div>
+            </div>
+
+            <!-- Сортировка -->
+            <div
+              class="flex items-center justify-between px-4 py-3 sm:px-6 lg:px-8 border-b border-gray-200 bg-white"
+            >
+              <span class="text-xs font-medium text-gray-500"
+                >8 участников</span
+              >
+
+              <el-dropdown class="relative">
+                <button
+                  class="flex items-center gap-x-1 text-xs font-medium text-gray-600 hover:text-indigo-600 transition-colors"
+                >
+                  Сортировка
+                  <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                    <path
+                      fill-rule="evenodd"
+                      d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </button>
+                <el-menu
+                  anchor="bottom end"
+                  popover
+                  class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-gray-200 focus:outline-none data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
+                >
+                  <a
+                    href="#"
+                    class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                    >По имени</a
+                  >
+                  <a
+                    href="#"
+                    class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                    >По активности</a
+                  >
+                  <a
+                    href="#"
+                    class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                    >По отделу</a
+                  >
+                </el-menu>
+              </el-dropdown>
+            </div>
+
+            <!-- СПИСОК ПОЛЬЗОВАТЕЛЕЙ (светлая тема) -->
+            <ul
+              role="list"
+              class="divide-y divide-gray-200 bg-white"
+              id="users-list"
+            >
+              <!-- Michael Foster -->
+              <li
+                class="relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8 hover:bg-gray-50 cursor-pointer transition-colors user-item"
+                data-user="michael"
+              >
+                <div class="flex-shrink-0">
+                  <img
+                    class="h-10 w-10 rounded-full ring-2 ring-gray-200"
+                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                    alt=""
+                  />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium text-gray-900">
+                      Michael Foster
+                    </p>
+                    <span
+                      class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
+                      >Active</span
+                    >
+                  </div>
+                  <div
+                    class="mt-1 flex items-center gap-x-2 text-xs text-gray-500"
+                  >
+                    <p class="truncate">Lead Developer</p>
+                    <span>•</span>
+                    <p>24 projects</p>
+                  </div>
+                </div>
+              </li>
+
+              <!-- Lindsay Walton -->
+              <li
+                class="relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8 hover:bg-gray-50 cursor-pointer transition-colors user-item"
+                data-user="lindsay"
+              >
+                <div class="flex-shrink-0">
+                  <img
+                    class="h-10 w-10 rounded-full ring-2 ring-gray-200"
+                    src="https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                    alt=""
+                  />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium text-gray-900">
+                      Lindsay Walton
+                    </p>
+                    <span
+                      class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
+                      >Active</span
+                    >
+                  </div>
+                  <div
+                    class="mt-1 flex items-center gap-x-2 text-xs text-gray-500"
+                  >
+                    <p class="truncate">Frontend Developer</p>
+                    <span>•</span>
+                    <p>18 projects</p>
+                  </div>
+                </div>
+              </li>
+
+              <!-- Courtney Henry -->
+              <li
+                class="relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8 hover:bg-gray-50 cursor-pointer transition-colors user-item"
+                data-user="courtney"
+              >
+                <div class="flex-shrink-0">
+                  <img
+                    class="h-10 w-10 rounded-full ring-2 ring-gray-200"
+                    src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                    alt=""
+                  />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium text-gray-900">
+                      Courtney Henry
+                    </p>
+                    <span
+                      class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
+                      >Active</span
+                    >
+                  </div>
+                  <div
+                    class="mt-1 flex items-center gap-x-2 text-xs text-gray-500"
+                  >
+                    <p class="truncate">Backend Developer</p>
+                    <span>•</span>
+                    <p>31 projects</p>
+                  </div>
+                </div>
+              </li>
+
+              <!-- Whitney Francis -->
+              <li
+                class="relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8 hover:bg-gray-50 cursor-pointer transition-colors user-item"
+                data-user="whitney"
+              >
+                <div class="flex-shrink-0">
+                  <img
+                    class="h-10 w-10 rounded-full ring-2 ring-gray-200"
+                    src="https://images.unsplash.com/photo-1517365830460-955ce3ccd263?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                    alt=""
+                  />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium text-gray-900">
+                      Whitney Francis
+                    </p>
+                    <span
+                      class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
+                      >Active</span
+                    >
+                  </div>
+                  <div
+                    class="mt-1 flex items-center gap-x-2 text-xs text-gray-500"
+                  >
+                    <p class="truncate">DevOps Engineer</p>
+                    <span>•</span>
+                    <p>15 projects</p>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Правая часть: Карточка пользователя (2/3 ширины) - светлая тема -->
+          <div
+            class="w-2/3 bg-gray-50 p-6 custom-scroll overflow-y-auto"
+            style="max-height: calc(100vh - 180px)"
+            id="user-card-container"
+          >
+            <!-- Карточка пользователя -->
+            <div
+              id="user-card"
+              class="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-lg"
+            >
+              <!-- Шапка карточки с градиентом -->
+              <div
+                class="h-32 bg-gradient-to-r from-indigo-500 to-indigo-600 relative"
+              >
+                <div class="absolute -bottom-12 left-6">
+                  <img
+                    id="card-avatar"
+                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                    alt=""
+                    class="h-24 w-24 rounded-full border-4 border-white bg-white"
+                  />
+                </div>
+              </div>
+
+              <!-- Контент карточки -->
+              <div class="pt-16 pb-6 px-6">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <h2 id="card-name" class="text-2xl font-bold text-gray-900">
+                      Michael Foster
+                    </h2>
+                    <p id="card-role" class="text-indigo-600">Lead Developer</p>
+                  </div>
+                  <span
+                    id="card-status"
+                    class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20"
+                    >Active</span
+                  >
+                </div>
+
+                <div class="mt-6 border-t border-gray-200 pt-6">
+                  <h3 class="text-sm font-medium text-gray-500">
+                    Контактная информация
+                  </h3>
+                  <dl class="mt-3 space-y-3">
+                    <div class="flex justify-between">
+                      <dt class="text-sm text-gray-500">Email</dt>
+                      <dd id="card-email" class="text-sm text-gray-900">
+                        michael.foster@example.com
+                      </dd>
+                    </div>
+                    <div class="flex justify-between">
+                      <dt class="text-sm text-gray-500">Телефон</dt>
+                      <dd id="card-phone" class="text-sm text-gray-900">
+                        +1 (555) 123-4567
+                      </dd>
+                    </div>
+                    <div class="flex justify-between">
+                      <dt class="text-sm text-gray-500">Отдел</dt>
+                      <dd id="card-department" class="text-sm text-gray-900">
+                        Engineering
+                      </dd>
+                    </div>
+                    <div class="flex justify-between">
+                      <dt class="text-sm text-gray-500">Локация</dt>
+                      <dd id="card-location" class="text-sm text-gray-900">
+                        San Francisco, CA
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <div class="mt-6 border-t border-gray-200 pt-6">
+                  <h3 class="text-sm font-medium text-gray-500">Статистика</h3>
+                  <div class="mt-3 grid grid-cols-2 gap-4">
+                    <div class="bg-gray-100 rounded-lg p-3">
+                      <p class="text-xs text-gray-500">Проектов</p>
+                      <p
+                        id="card-projects"
+                        class="text-xl font-semibold text-gray-900"
+                      >
+                        24
+                      </p>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-3">
+                      <p class="text-xs text-gray-500">Коммитов</p>
+                      <p
+                        id="card-commits"
+                        class="text-xl font-semibold text-gray-900"
+                      >
+                        1,432
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-6 flex gap-3">
+                  <button
+                    class="flex-1 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  >
+                    Написать
+                  </button>
+                  <button
+                    class="flex-1 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-gray-300 hover:bg-gray-50"
+                  >
+                    Профиль
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Скрипт для открытия модалки и обновления карточки -->
+    <script>
+      // Открытие мобильного меню
+      document
+        .querySelectorAll('[commandfor="sidebar-mobile"]')
+        .forEach((button) => {
+          button.addEventListener('click', () => {
+            document.getElementById('sidebar-mobile')?.showModal()
+          })
+        })
+
+      // Данные пользователей
+      const users = {
+        michael: {
+          name: 'Michael Foster',
+          role: 'Lead Developer',
+          email: 'michael.foster@example.com',
+          phone: '+1 (555) 123-4567',
+          department: 'Engineering',
+          location: 'San Francisco, CA',
+          projects: '24',
+          commits: '1,432',
+          status: 'Active',
+          statusColor: 'green',
+          avatar:
+            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+        },
+        lindsay: {
+          name: 'Lindsay Walton',
+          role: 'Frontend Developer',
+          email: 'lindsay.walton@example.com',
+          phone: '+1 (555) 234-5678',
+          department: 'Product',
+          location: 'New York, NY',
+          projects: '18',
+          commits: '967',
+          status: 'Active',
+          statusColor: 'green',
+          avatar:
+            'https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+        },
+        courtney: {
+          name: 'Courtney Henry',
+          role: 'Backend Developer',
+          email: 'courtney.henry@example.com',
+          phone: '+1 (555) 345-6789',
+          department: 'Engineering',
+          location: 'Austin, TX',
+          projects: '31',
+          commits: '2,156',
+          status: 'Active',
+          statusColor: 'green',
+          avatar:
+            'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+        },
+        whitney: {
+          name: 'Whitney Francis',
+          role: 'DevOps Engineer',
+          email: 'whitney.francis@example.com',
+          phone: '+1 (555) 456-7890',
+          department: 'Infrastructure',
+          location: 'Seattle, WA',
+          projects: '15',
+          commits: '843',
+          status: 'Active',
+          statusColor: 'green',
+          avatar:
+            'https://images.unsplash.com/photo-1517365830460-955ce3ccd263?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+        }
+      }
+
+      // Функция обновления карточки
+      function updateUserCard(userId) {
+        const user = users[userId] || users.michael
+
+        document.getElementById('card-name').textContent = user.name
+        document.getElementById('card-role').textContent = user.role
+        document.getElementById('card-email').textContent = user.email
+        document.getElementById('card-phone').textContent = user.phone
+        document.getElementById('card-department').textContent = user.department
+        document.getElementById('card-location').textContent = user.location
+        document.getElementById('card-projects').textContent = user.projects
+        document.getElementById('card-commits').textContent = user.commits
+        document.getElementById('card-avatar').src = user.avatar
+
+        // Обновляем статус
+        const statusEl = document.getElementById('card-status')
+        statusEl.textContent = user.status
+        statusEl.className = `inline-flex items-center rounded-md bg-${user.statusColor}-50 px-2 py-1 text-xs font-medium text-${user.statusColor}-700 ring-1 ring-inset ring-${user.statusColor}-600/20`
+      }
+
+      // Добавляем обработчики кликов на элементы списка пользователей
+      document.querySelectorAll('.user-item').forEach((item) => {
+        item.addEventListener('click', function (e) {
+          e.preventDefault()
+
+          // Убираем выделение со всех элементов
+          document.querySelectorAll('.user-item').forEach((el) => {
+            el.classList.remove(
+              'bg-indigo-50',
+              'border-l-4',
+              'border-indigo-500'
+            )
+          })
+
+          // Добавляем выделение текущему элементу
+          this.classList.add('bg-indigo-50', 'border-l-4', 'border-indigo-500')
+
+          // Получаем ID пользователя и обновляем карточку
+          const userId = this.getAttribute('data-user')
+          updateUserCard(userId)
+        })
+      })
+
+      // Выделяем первый элемент при загрузке
+      window.addEventListener('load', function () {
+        const firstItem = document.querySelector('.user-item')
+        if (firstItem) {
+          firstItem.classList.add(
+            'bg-indigo-50',
+            'border-l-4',
+            'border-indigo-500'
+          )
+        }
+      })
+
+      // Поиск по пользователям
+      document
+        .getElementById('search-users')
+        .addEventListener('input', function (e) {
+          const searchTerm = e.target.value.toLowerCase()
+          const items = document.querySelectorAll('.user-item')
+
+          items.forEach((item) => {
+            const name = item
+              .querySelector('.text-gray-900')
+              .textContent.toLowerCase()
+            const role = item
+              .querySelector('.truncate')
+              .textContent.toLowerCase()
+
+            if (name.includes(searchTerm) || role.includes(searchTerm)) {
+              item.style.display = 'flex'
+            } else {
+              item.style.display = 'none'
+            }
+          })
+
+          // Обновляем счетчик
+          const visibleCount = document.querySelectorAll(
+            '.user-item[style="display: flex;"]'
+          ).length
+          document.querySelector('.text-gray-500').textContent =
+            `${visibleCount} участников`
+        })
+    </script>
+  </body>
+</html>

@@ -1,7 +1,7 @@
 import { http, HttpResponse, delay } from 'msw'
 import { faker } from '@faker-js/faker'
 import { mockUsers } from '../data/users'
-import type { User } from '../../types/user'
+import type { User } from '../../app/types/user'
 
 // Копия для мутаций
 const users = [...mockUsers]
@@ -16,13 +16,10 @@ export const userHandlers = [
   // GET /api/users/:id
   http.get('/api/users/:id', async ({ params }) => {
     await delay(400)
-    const user = users.find(u => u.id === params.id)
+    const user = users.find((u) => u.id === params.id)
 
     if (!user) {
-      return HttpResponse.json(
-        { message: 'User not found' },
-        { status: 404 }
-      )
+      return HttpResponse.json({ message: 'User not found' }, { status: 404 })
     }
 
     return HttpResponse.json(user)
@@ -31,7 +28,10 @@ export const userHandlers = [
   // POST /api/users
   http.post('/api/users', async ({ request }) => {
     await delay(700)
-    const body = await request.json() as Omit<User, 'id' | 'registeredAt' | 'lastLogin' | 'avatar'>
+    const body = (await request.json()) as Omit<
+      User,
+      'id' | 'registeredAt' | 'lastLogin' | 'avatar'
+    >
 
     const newUser: User = {
       id: faker.string.uuid(),
@@ -49,23 +49,17 @@ export const userHandlers = [
   // PUT /api/users/:id
   http.put('/api/users/:id', async ({ params, request }) => {
     await delay(500)
-    const body = await request.json() as Partial<User>
-    const index = users.findIndex(u => u.id === params.id)
+    const body = (await request.json()) as Partial<User>
+    const index = users.findIndex((u) => u.id === params.id)
 
     if (index === -1) {
-      return HttpResponse.json(
-        { message: 'User not found' },
-        { status: 404 }
-      )
+      return HttpResponse.json({ message: 'User not found' }, { status: 404 })
     }
 
     // Проверяем, что пользователь существует
     const existingUser = users[index]
     if (!existingUser) {
-      return HttpResponse.json(
-        { message: 'User not found' },
-        { status: 404 }
-      )
+      return HttpResponse.json({ message: 'User not found' }, { status: 404 })
     }
 
     // Создаем обновленного пользователя с явными полями
@@ -88,13 +82,10 @@ export const userHandlers = [
   // DELETE /api/users/:id
   http.delete('/api/users/:id', async ({ params }) => {
     await delay(400)
-    const index = users.findIndex(u => u.id === params.id)
+    const index = users.findIndex((u) => u.id === params.id)
 
     if (index === -1) {
-      return HttpResponse.json(
-        { message: 'User not found' },
-        { status: 404 }
-      )
+      return HttpResponse.json({ message: 'User not found' }, { status: 404 })
     }
 
     users.splice(index, 1)
