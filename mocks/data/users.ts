@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker'
-import type { User } from '../../types/user'
+import type { User } from '../../app/types/user'
 
 export const generateMockUsers = (count: number = 20): User[] => {
   return Array.from({ length: count }, () => ({

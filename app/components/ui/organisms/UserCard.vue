@@ -2,8 +2,50 @@
   <div
     class="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-lg"
   >
-    <!-- Шапка карточки с градиентом -->
+    <!-- Шапка карточки с градиентом и кнопками действий -->
     <div class="h-32 bg-gradient-to-r from-indigo-500 to-indigo-600 relative">
+      <!-- Кнопки действий в шапке -->
+      <div class="absolute top-4 right-4 flex space-x-2">
+        <button
+          @click="$emit('edit', user)"
+          class="p-2 bg-white/20 hover:bg-white/30 rounded-lg text-white transition-colors"
+          title="Редактировать"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+            />
+          </svg>
+        </button>
+        <button
+          @click="$emit('delete', user)"
+          class="p-2 bg-white/20 hover:bg-white/30 rounded-lg text-white transition-colors"
+          title="Удалить"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+        </button>
+      </div>
+
       <div class="absolute -bottom-12 left-6">
         <img
           :src="user.avatar"
@@ -20,8 +62,8 @@
           <h2 class="text-2xl font-bold text-gray-900">{{ user.name }}</h2>
           <p class="text-indigo-600">{{ user.role }}</p>
         </div>
-        <Badge :variant="user.status === 'Active' ? 'success' : 'default'">
-          {{ user.status }}
+        <Badge :variant="user.status === 'active' ? 'success' : 'default'">
+          {{ user.status === 'active' ? 'Активен' : 'Заблокирован' }}
         </Badge>
       </div>
 
@@ -32,17 +74,23 @@
             <dt class="text-sm text-gray-500">Email</dt>
             <dd class="text-sm text-gray-900">{{ user.email }}</dd>
           </div>
-          <div class="flex justify-between">
+          <div v-if="user.phone" class="flex justify-between">
             <dt class="text-sm text-gray-500">Телефон</dt>
             <dd class="text-sm text-gray-900">{{ user.phone }}</dd>
           </div>
-          <div class="flex justify-between">
+          <div v-if="user.department" class="flex justify-between">
             <dt class="text-sm text-gray-500">Отдел</dt>
             <dd class="text-sm text-gray-900">{{ user.department }}</dd>
           </div>
-          <div class="flex justify-between">
+          <div v-if="user.location" class="flex justify-between">
             <dt class="text-sm text-gray-500">Локация</dt>
             <dd class="text-sm text-gray-900">{{ user.location }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm text-gray-500">Зарегистрирован</dt>
+            <dd class="text-sm text-gray-900">
+              {{ formatDate(user.registeredAt) }}
+            </dd>
           </div>
         </dl>
       </div>
@@ -53,13 +101,13 @@
           <div class="bg-gray-100 rounded-lg p-3">
             <p class="text-xs text-gray-500">Проектов</p>
             <p class="text-xl font-semibold text-gray-900">
-              {{ user.projects }}
+              {{ user.projects || '0' }}
             </p>
           </div>
           <div class="bg-gray-100 rounded-lg p-3">
             <p class="text-xs text-gray-500">Коммитов</p>
             <p class="text-xl font-semibold text-gray-900">
-              {{ user.commits }}
+              {{ user.commits || '0' }}
             </p>
           </div>
         </div>
@@ -85,26 +133,21 @@
 
 <script setup lang="ts">
   import Badge from '../atoms/Badge.vue'
+  import type { ExtendedUser } from '~/types/user'
 
-  defineProps({
-    user: {
-      type: Object,
-      required: true,
-      default: () => ({
-        name: 'Michael Foster',
-        role: 'Lead Developer',
-        email: 'michael.foster@example.com',
-        phone: '+1 (555) 123-4567',
-        department: 'Engineering',
-        location: 'San Francisco, CA',
-        projects: '24',
-        commits: '1,432',
-        status: 'Active',
-        avatar:
-          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-      })
-    }
-  })
+  defineProps<{
+    user: ExtendedUser
+  }>()
 
-  defineEmits(['message', 'profile'])
+  defineEmits<{
+    (e: 'message', user: ExtendedUser): void
+    (e: 'profile', user: ExtendedUser): void
+    (e: 'edit', user: ExtendedUser): void
+    (e: 'delete', user: ExtendedUser): void
+  }>()
+
+  function formatDate(dateString?: string): string {
+    if (!dateString) return '—'
+    return new Date(dateString).toLocaleDateString('ru-RU')
+  }
 </script>

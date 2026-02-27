@@ -14,14 +14,14 @@
     <div class="min-w-0 flex-1">
       <div class="flex items-center justify-between">
         <p class="text-sm font-medium text-gray-900">{{ user.name }}</p>
-        <Badge :variant="user.status === 'Active' ? 'success' : 'default'">
-          {{ user.status }}
+        <Badge :variant="user.status === 'active' ? 'success' : 'default'">
+          {{ user.status === 'active' ? 'Активен' : 'Заблокирован' }}
         </Badge>
       </div>
       <div class="mt-1 flex items-center gap-x-2 text-xs text-gray-500">
         <p class="truncate">{{ user.role }}</p>
         <span>•</span>
-        <p>{{ user.projects }} проектов</p>
+        <p>{{ user.projects || '0' }} проектов</p>
       </div>
     </div>
   </li>
@@ -29,17 +29,14 @@
 
 <script setup lang="ts">
   import Badge from './../atoms/Badge.vue'
+  import type { ExtendedUser } from '~/types/user'
 
-  defineProps({
-    user: {
-      type: Object,
-      required: true
-    },
-    active: {
-      type: Boolean,
-      default: false
-    }
-  })
+  defineProps<{
+    user: ExtendedUser
+    active?: boolean
+  }>()
 
-  defineEmits(['click'])
+  defineEmits<{
+    (e: 'click', user: ExtendedUser): void
+  }>()
 </script>

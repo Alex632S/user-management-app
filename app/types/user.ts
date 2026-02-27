@@ -12,3 +12,11 @@ export interface User {
 export type NewUser = Omit<User, 'id' | 'registeredAt' | 'lastLogin' | 'avatar'>
 
 export type UpdateUser = Partial<Omit<User, 'id'>>
+
+export interface ExtendedUser extends User {
+  phone?: string
+  department?: string
+  location?: string
+  projects?: string
+  commits?: string
+}

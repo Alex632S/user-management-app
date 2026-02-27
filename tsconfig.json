@@ -5,5 +5,5 @@
     "moduleResolution": "Bundler",
     "types": ["node", "vite/client"]
   },
-  "include": ["app/**/*", "mocks/**/*", "types/**/*", "tests/**/*"]
+  "include": ["app/**/*", "mocks/**/*", "app/types/**/*", "tests/**/*"]
 }
