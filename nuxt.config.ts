@@ -5,7 +5,8 @@ export default defineNuxtConfig({
 
   srcDir: 'app/',
   modules: [
-    '@netlify/nuxt',
+    // раскомментировать для dev и main веток
+    // '@netlify/nuxt',
     [
       '@nuxt/eslint',
       {
