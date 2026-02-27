@@ -1,0 +1,92 @@
+---
+id: 2d28c123-9613-48ff-b430-0bbfe8f9a0a9
+---
+flowchart TD
+    subgraph Client ["Клиентская часть"]
+        UI[Vue.js / Nuxt приложение]
+        API_Calls[API вызовы]
+    end
+
+    subgraph MSW ["MSW Mock Service Worker"]
+        direction TB
+        Browser[setupWorker<br/>msw/browser]
+        Node[setupServer<br/>msw/node]
+
+        subgraph Handlers ["Обработчики запросов"]
+            direction TB
+            GET_List[GET /api/users<br/>Список с фильтрацией]
+            GET_One[GET /api/users/:id<br/>Получить пользователя]
+            POST_Create[POST /api/users<br/>Создать пользователя]
+            PUT_Update[PUT /api/users/:id<br/>Полное обновление]
+            PATCH_Update[PATCH /api/users/:id<br/>Частичное обновление]
+            DELETE[DELETE /api/users/:id<br/>Удалить]
+
+            subgraph Additional ["Дополнительные эндпоинты"]
+                Block[POST /api/users/:id/block<br/>Блокировка]
+                Unblock[POST /api/users/:id/unblock<br/>Разблокировка]
+                Stats[GET /api/users/stats<br/>Статистика]
+                Batch[POST /api/users/batch-delete<br/>Массовое удаление]
+                Templates[GET /api/users/templates<br/>Шаблоны]
+            end
+        end
+    end
+
+    subgraph Data ["Слой данных"]
+        direction TB
+        Users[(Массив users)]
+        MockData["generateMockUsers()"]
+        Validation["validateUserData()"]
+
+        subgraph Types ["Типы TypeScript"]
+            User[User interface]
+            NewUser[NewUser type]
+            UpdateUser[UpdateUser type]
+            ExtendedUser[ExtendedUser]
+            Responses[UsersResponse<br/>UserResponse<br/>ApiError]
+        end
+    end
+
+    subgraph Utils ["Вспомогательные функции"]
+        Generate[Генерация данных:<br/>- avatar<br/>- phone<br/>- department<br/>- location]
+        Validators[Валидация:<br/>- isValidEmail<br/>- isValidPhone<br/>- formatPhone]
+        Templates[Шаблоны:<br/>- admin<br/>- editor<br/>- viewer<br/>- blocked]
+    end
+
+    Client --> API_Calls
+    API_Calls --> MSW
+
+    Browser --> Handlers
+    Node --> Handlers
+
+    Handlers --> Data
+    Data --> Utils
+
+    GET_List --> Users
+    GET_One --> Users
+    POST_Create --> Users
+    PUT_Update --> Users
+    PATCH_Update --> Users
+    DELETE --> Users
+    Block --> Users
+    Unblock --> Users
+    Stats --> Users
+    Batch --> Users
+
+    Users --> MockData
+    Users --> Validation
+
+    MockData --> Generate
+    Validation --> Validators
+    Templates --> Handlers
+
+    classDef client fill:#e1f5fe,stroke:#01579b
+    classDef msw fill:#fff3e0,stroke:#ff6f00
+    classDef data fill:#e8f5e8,stroke:#1b5e20
+    classDef utils fill:#f3e5f5,stroke:#4a148c
+    classDef types fill:#ffebee,stroke:#b71c1c
+
+    class Client client
+    class MSW,Browser,Node,Handlers,Additional msw
+    class Data,Users,Validation data
+    class Utils,Generate,Validators utils
+    class Types,User,NewUser,UpdateUser,ExtendedUser,Responses types
