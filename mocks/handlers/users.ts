@@ -110,7 +110,8 @@ export const userHandlers = [
     const url = new URL(request.url)
     const role = url.searchParams.get('role') as UserFilters['role']
     const status = url.searchParams.get('status') as UserFilters['status']
-    const search = url.searchParams.get('search')?.toLowerCase()
+    const search = (url.searchParams.get('search')?.toLowerCase() ??
+      '') as string
     const extended = url.searchParams.get('extended') === 'true'
 
     let filteredUsers = [...users]

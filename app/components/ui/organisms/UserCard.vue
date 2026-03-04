@@ -2,9 +2,7 @@
   <div
     class="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-lg"
   >
-    <!-- Шапка карточки с градиентом и кнопками действий -->
     <div class="h-32 bg-gradient-to-r from-indigo-500 to-indigo-600 relative">
-      <!-- Кнопки действий в шапке -->
       <div class="absolute top-4 right-4 flex space-x-2">
         <button
           @click="$emit('edit', user)"
@@ -60,10 +58,10 @@
       <div class="flex justify-between items-start">
         <div>
           <h2 class="text-2xl font-bold text-gray-900">{{ user.name }}</h2>
-          <p class="text-indigo-600">{{ user.role }}</p>
+          <p class="text-indigo-600">{{ ROLE_LABELS[user.role] }}</p>
         </div>
         <Badge :variant="user.status === 'active' ? 'success' : 'default'">
-          {{ user.status === 'active' ? 'Активен' : 'Заблокирован' }}
+          {{ STATUS_LABELS[user.status] }}
         </Badge>
       </div>
 
@@ -74,15 +72,15 @@
             <dt class="text-sm text-gray-500">Email</dt>
             <dd class="text-sm text-gray-900">{{ user.email }}</dd>
           </div>
-          <div v-if="user.phone" class="flex justify-between">
+          <div class="flex justify-between">
             <dt class="text-sm text-gray-500">Телефон</dt>
-            <dd class="text-sm text-gray-900">{{ user.phone }}</dd>
+            <dd class="text-sm text-gray-900">{{ formatPhone(user.phone) }}</dd>
           </div>
-          <div v-if="user.department" class="flex justify-between">
+          <div v-if="isExtendedUser(user)" class="flex justify-between">
             <dt class="text-sm text-gray-500">Отдел</dt>
             <dd class="text-sm text-gray-900">{{ user.department }}</dd>
           </div>
-          <div v-if="user.location" class="flex justify-between">
+          <div v-if="isExtendedUser(user)" class="flex justify-between">
             <dt class="text-sm text-gray-500">Локация</dt>
             <dd class="text-sm text-gray-900">{{ user.location }}</dd>
           </div>
@@ -92,22 +90,31 @@
               {{ formatDate(user.registeredAt) }}
             </dd>
           </div>
+          <div class="flex justify-between">
+            <dt class="text-sm text-gray-500">Последний вход</dt>
+            <dd class="text-sm text-gray-900">
+              {{ formatDate(user.lastLogin) }}
+            </dd>
+          </div>
         </dl>
       </div>
 
-      <div class="mt-6 border-t border-gray-200 pt-6">
+      <div
+        v-if="isExtendedUser(user)"
+        class="mt-6 border-t border-gray-200 pt-6"
+      >
         <h3 class="text-sm font-medium text-gray-500">Статистика</h3>
         <div class="mt-3 grid grid-cols-2 gap-4">
           <div class="bg-gray-100 rounded-lg p-3">
             <p class="text-xs text-gray-500">Проектов</p>
             <p class="text-xl font-semibold text-gray-900">
-              {{ user.projects || '0' }}
+              {{ user.projects }}
             </p>
           </div>
           <div class="bg-gray-100 rounded-lg p-3">
             <p class="text-xs text-gray-500">Коммитов</p>
             <p class="text-xl font-semibold text-gray-900">
-              {{ user.commits || '0' }}
+              {{ user.commits }}
             </p>
           </div>
         </div>
@@ -133,21 +140,29 @@
 
 <script setup lang="ts">
   import Badge from '../atoms/Badge.vue'
-  import type { ExtendedUser } from '~/types/user'
+  import type { User, ExtendedUser } from '~/types/user'
+  import { ROLE_LABELS, STATUS_LABELS, formatPhone } from '~/types/user'
 
-  defineProps<{
-    user: ExtendedUser
+  const props = defineProps<{
+    user: User | ExtendedUser
   }>()
 
   defineEmits<{
-    (e: 'message', user: ExtendedUser): void
-    (e: 'profile', user: ExtendedUser): void
-    (e: 'edit', user: ExtendedUser): void
-    (e: 'delete', user: ExtendedUser): void
+    (e: 'message', user: User | ExtendedUser): void
+    (e: 'profile', user: User | ExtendedUser): void
+    (e: 'edit', user: User | ExtendedUser): void
+    (e: 'delete', user: User | ExtendedUser): void
   }>()
 
-  function formatDate(dateString?: string): string {
-    if (!dateString) return '—'
-    return new Date(dateString).toLocaleDateString('ru-RU')
+  function formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
+  }
+
+  function isExtendedUser(user: User | ExtendedUser): user is ExtendedUser {
+    return 'department' in user
   }
 </script>

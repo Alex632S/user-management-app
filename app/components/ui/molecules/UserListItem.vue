@@ -15,28 +15,29 @@
       <div class="flex items-center justify-between">
         <p class="text-sm font-medium text-gray-900">{{ user.name }}</p>
         <Badge :variant="user.status === 'active' ? 'success' : 'default'">
-          {{ user.status === 'active' ? 'Активен' : 'Заблокирован' }}
+          {{ STATUS_LABELS[user.status] }}
         </Badge>
       </div>
       <div class="mt-1 flex items-center gap-x-2 text-xs text-gray-500">
-        <p class="truncate">{{ user.role }}</p>
+        <p class="truncate">{{ ROLE_LABELS[user.role] }}</p>
         <span>•</span>
-        <p>{{ user.projects || '0' }} проектов</p>
+        <p>{{ formatPhone(user.phone) }}</p>
       </div>
     </div>
   </li>
 </template>
 
 <script setup lang="ts">
-  import Badge from './../atoms/Badge.vue'
-  import type { ExtendedUser } from '~/types/user'
+  import Badge from '../atoms/Badge.vue'
+  import type { User } from '~/types/user'
+  import { ROLE_LABELS, STATUS_LABELS, formatPhone } from '~/types/user'
 
   defineProps<{
-    user: ExtendedUser
+    user: User
     active?: boolean
   }>()
 
   defineEmits<{
-    (e: 'click', user: ExtendedUser): void
+    (e: 'click', user: User): void
   }>()
 </script>

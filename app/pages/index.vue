@@ -11,42 +11,42 @@
             <SidebarNavItem
               to="/"
               icon="dashboard"
-              :active="$route.path === '/'"
+              :active="route.path === '/'"
             >
               Dashboard
             </SidebarNavItem>
             <SidebarNavItem
               to="/users"
               icon="team"
-              :active="$route.path.startsWith('/users')"
+              :active="route.path.startsWith('/users')"
             >
               Users
             </SidebarNavItem>
             <SidebarNavItem
               to="/projects"
               icon="projects"
-              :active="$route.path.startsWith('/projects')"
+              :active="route.path.startsWith('/projects')"
             >
               Projects
             </SidebarNavItem>
             <SidebarNavItem
               to="/calendar"
               icon="calendar"
-              :active="$route.path.startsWith('/calendar')"
+              :active="route.path.startsWith('/calendar')"
             >
               Calendar
             </SidebarNavItem>
             <SidebarNavItem
               to="/documents"
               icon="documents"
-              :active="$route.path.startsWith('/documents')"
+              :active="route.path.startsWith('/documents')"
             >
               Documents
             </SidebarNavItem>
             <SidebarNavItem
               to="/settings"
               icon="settings"
-              :active="$route.path.startsWith('/settings')"
+              :active="route.path.startsWith('/settings')"
             >
               Settings
             </SidebarNavItem>
@@ -352,139 +352,32 @@
       </main>
     </div>
 
-    <!-- Модальное окно для создания/редактирования пользователя -->
-    <div v-if="isModalOpen" class="fixed inset-0 z-50 overflow-y-auto">
-      <div class="flex items-center justify-center min-h-screen px-4">
-        <div
-          class="fixed inset-0 bg-black opacity-30"
-          @click="closeModal"
-        ></div>
+    <UserFormModal
+      v-if="isModalOpen"
+      :mode="modalMode"
+      :initial-data="
+        modalMode === 'edit' && selectedUser ? selectedUser : undefined
+      "
+      :loading="modalLoading"
+      @close="closeModal"
+      @save="handleSaveUser"
+    />
 
-        <div class="relative bg-white rounded-lg max-w-md w-full p-6">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">
-            {{
-              modalMode === 'create'
-                ? 'Создать пользователя'
-                : 'Редактировать пользователя'
-            }}
-          </h3>
-
-          <form @submit.prevent="saveUser" class="space-y-4">
-            <!-- Имя -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Имя</label>
-              <input
-                v-model="userForm.name"
-                type="text"
-                required
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
-            </div>
-
-            <!-- Email -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Email</label
-              >
-              <input
-                v-model="userForm.email"
-                type="email"
-                required
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
-            </div>
-
-            <!-- Роль -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Роль</label
-              >
-              <select
-                v-model="userForm.role"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              >
-                <option value="admin">Администратор</option>
-                <option value="editor">Редактор</option>
-                <option value="viewer">Наблюдатель</option>
-              </select>
-            </div>
-
-            <!-- Статус -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Статус</label
-              >
-              <select
-                v-model="userForm.status"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              >
-                <option value="active">Активен</option>
-                <option value="blocked">Заблокирован</option>
-              </select>
-            </div>
-
-            <!-- Дополнительные поля -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Телефон</label
-              >
-              <input
-                v-model="userForm.phone"
-                type="text"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Отдел</label
-              >
-              <input
-                v-model="userForm.department"
-                type="text"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Локация</label
-              >
-              <input
-                v-model="userForm.location"
-                type="text"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
-            </div>
-
-            <!-- Кнопки -->
-            <div class="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                @click="closeModal"
-                class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Отмена
-              </button>
-              <button
-                type="submit"
-                :disabled="modalLoading"
-                class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {{ modalLoading ? 'Сохранение...' : 'Сохранить' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    <NotificationToast
+      v-if="notification.show"
+      :type="notification.type"
+      :message="notification.message"
+      :errors="notification.errors"
+      @close="notification.show = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, onMounted, watch } from 'vue'
+  import { ref, computed, onMounted } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import type { ExtendedUser } from '~/types/user'
+  import { useUsersPage } from '~/composables/useUsersPage'
+  import type { ExtendedUser, User, UserFormData } from '~/types/user'
 
   // Существующие компоненты
   import Sidebar from '~/components/ui/organisms/Sidebar/Sidebar.vue'
@@ -499,31 +392,46 @@
   import SortDropdown from '~/components/ui/molecules/SortDropdown.vue'
   import UserListItem from '~/components/ui/molecules/UserListItem.vue'
   import Icon from '~/components/ui/atoms/Icon.vue'
+  import UserFormModal from '~/components/ui/organisms/UserFormModal.vue'
+  import NotificationToast from '~/components/ui/molecules/NotificationToast.vue'
 
   const route = useRoute()
   const router = useRouter()
+  const mobileSidebar = ref<InstanceType<typeof MobileSidebar> | null>(null)
   const searchQuery = ref('')
   const sortBy = ref('name')
-  const selectedUser = ref<ExtendedUser | null>(null)
-  const mobileSidebar = ref<InstanceType<typeof MobileSidebar> | null>(null)
 
-  // Состояния загрузки данных
-  const users = ref<ExtendedUser[]>([])
-  const loading = ref(false)
-  const error = ref<string | null>(null)
+  const {
+    users,
+    loading,
+    error,
+    selectedUser,
+    filteredUsers: composableFilteredUsers,
+    fetchUsers,
+    createUser,
+    updateUser,
+    deleteUser,
+    setSelectedUser
+  } = useUsersPage()
 
-  // Состояния модального окна
+  // Состояние модального окна
   const isModalOpen = ref(false)
   const modalMode = ref<'create' | 'edit'>('create')
   const modalLoading = ref(false)
-  const userForm = ref({
-    name: '',
-    email: '',
-    role: 'viewer' as 'admin' | 'editor' | 'viewer',
-    status: 'active' as 'active' | 'blocked',
-    phone: '',
-    department: '',
-    location: ''
+
+  // Состояние уведомлений
+  interface Notification {
+    show: boolean
+    type: 'success' | 'error'
+    message: string
+    errors: Record<string, string> | null
+  }
+
+  const notification = ref<Notification>({
+    show: false,
+    type: 'success',
+    message: '',
+    errors: null
   })
 
   // Вычисляемые свойства
@@ -536,9 +444,9 @@
   })
 
   const filteredUsers = computed((): ExtendedUser[] => {
-    let filtered = [...users.value]
+    let filtered = composableFilteredUsers.value
 
-    // Фильтрация по поиску
+    // Дополнительная фильтрация по поиску
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase()
       filtered = filtered.filter(
@@ -582,218 +490,105 @@
       users.value.filter((user: ExtendedUser) => user.role === 'admin').length
   )
 
-  // CRUD методы
-  // CRUD методы
-  async function fetchUsers(): Promise<void> {
-    loading.value = true
-    error.value = null
+  onMounted(async () => {
+    await fetchUsers()
+  })
 
-    try {
-      const response = await fetch('/api/users')
-      if (!response.ok) throw new Error('Failed to fetch users')
-      const data = await response.json()
-      users.value = data.map((user: any) => ({
-        ...user,
-        registeredAt: user.registeredAt || new Date().toISOString(),
-        status: user.status === 'inactive' ? 'blocked' : user.status
-      })) as ExtendedUser[]
-
-      // Выбираем первого пользователя по умолчанию
-      if (users.value.length > 0) {
-        // Утверждаем, что users.value[0] существует и имеет тип ExtendedUser
-        const firstUser = users.value[0]
-        if (firstUser) {
-          selectedUser.value = firstUser
-        }
-      }
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Unknown error'
-      console.error('Error fetching users:', e)
-
-      // Для разработки используем моковые данные если API не доступно
-      if (import.meta.dev) {
-        users.value = mockUsers.map((user) => ({
-          ...user,
-          registeredAt: new Date().toISOString()
-        })) as ExtendedUser[]
-
-        if (users.value.length > 0) {
-          const firstMockUser = users.value[0]
-          if (firstMockUser) {
-            selectedUser.value = firstMockUser
-          }
-        }
-      }
-    } finally {
-      loading.value = false
-    }
+  const selectUser = (user: ExtendedUser | User): void => {
+    setSelectedUser(user as ExtendedUser)
   }
 
-  async function createUser(userData: any): Promise<void> {
-    modalLoading.value = true
-    try {
-      const newUser = {
-        ...userData,
-        id: `user-${Date.now()}`,
-        registeredAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString(),
-        avatar: `https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000)}?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80`,
-        projects: '0',
-        commits: '0'
-      }
-
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser)
-      })
-
-      if (!response.ok) throw new Error('Failed to create user')
-
-      const createdUser = await response.json()
-      users.value.push(createdUser as ExtendedUser)
-
-      // Выбираем созданного пользователя
-      selectedUser.value = createdUser as ExtendedUser
-
-      showNotification('Пользователь успешно создан', 'success')
-      closeModal()
-    } catch (e) {
-      console.error('Error creating user:', e)
-      showNotification('Ошибка при создании пользователя', 'error')
-    } finally {
-      modalLoading.value = false
-    }
-  }
-
-  async function updateUser(
-    id: string,
-    userData: Partial<ExtendedUser>
-  ): Promise<void> {
-    modalLoading.value = true
-    try {
-      const response = await fetch(`/api/users/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-      })
-
-      if (!response.ok) throw new Error('Failed to update user')
-
-      const updatedUser = await response.json()
-      const index = users.value.findIndex((u: ExtendedUser) => u.id === id)
-      if (index !== -1) {
-        users.value[index] = updatedUser as ExtendedUser
-      }
-
-      // Обновляем выбранного пользователя
-      if (selectedUser.value?.id === id) {
-        selectedUser.value = updatedUser as ExtendedUser
-      }
-
-      showNotification('Пользователь успешно обновлен', 'success')
-      closeModal()
-    } catch (e) {
-      console.error('Error updating user:', e)
-      showNotification('Ошибка при обновлении пользователя', 'error')
-    } finally {
-      modalLoading.value = false
-    }
-  }
-
-  async function deleteUser(id: string): Promise<void> {
-    try {
-      const response = await fetch(`/api/users/${id}`, {
-        method: 'DELETE'
-      })
-
-      if (!response.ok) throw new Error('Failed to delete user')
-
-      users.value = users.value.filter((u: ExtendedUser) => u.id !== id)
-
-      // Если удалили выбранного пользователя, выбираем первого
-      if (selectedUser.value?.id === id) {
-        selectedUser.value = users.value[0] || null
-      }
-
-      showNotification('Пользователь успешно удален', 'success')
-    } catch (e) {
-      console.error('Error deleting user:', e)
-      showNotification('Ошибка при удалении пользователя', 'error')
-    }
-  }
-
-  // Методы для работы с модальным окном
-  function openCreateModal(): void {
-    modalMode.value = 'create'
-    userForm.value = {
-      name: '',
-      email: '',
-      role: 'viewer',
-      status: 'active',
-      phone: '',
-      department: '',
-      location: ''
-    }
-    isModalOpen.value = true
-  }
-
-  function openEditModal(user: ExtendedUser): void {
-    modalMode.value = 'edit'
-    userForm.value = {
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      status: user.status,
-      phone: user.phone || '',
-      department: user.department || '',
-      location: user.location || ''
-    }
-    isModalOpen.value = true
-  }
-
-  function confirmDelete(user: ExtendedUser): void {
-    if (confirm(`Удалить пользователя ${user.name}?`)) {
-      deleteUser(user.id)
-    }
-  }
-
-  function closeModal(): void {
-    isModalOpen.value = false
-  }
-
-  async function saveUser(): Promise<void> {
-    if (modalMode.value === 'create') {
-      await createUser(userForm.value)
-    } else if (selectedUser.value) {
-      await updateUser(selectedUser.value.id, userForm.value)
-    }
-  }
-
-  // Уведомления
-  function showNotification(message: string, type: 'success' | 'error'): void {
-    console.log(`[${type}]`, message)
-    alert(message)
-  }
-
-  // Остальные методы
-  const selectUser = (user: ExtendedUser): void => {
-    selectedUser.value = user
+  const handleSearch = (query: string): void => {
+    searchQuery.value = query
   }
 
   const handleSort = (value: string): void => {
     sortBy.value = value
   }
 
-  const handleSearch = (query: string): void => {
-    console.log('Searching:', query)
+  const openCreateModal = (): void => {
+    modalMode.value = 'create'
+    isModalOpen.value = true
   }
 
-  const handleMessage = (user: ExtendedUser): void => {
-    alert(`Написать ${user.name}`)
+  const openEditModal = (user: ExtendedUser | User): void => {
+    modalMode.value = 'edit'
+    setSelectedUser(user as ExtendedUser)
+    isModalOpen.value = true
   }
 
-  const handleProfile = (user: ExtendedUser): void => {
+  const confirmDelete = async (user: ExtendedUser | User): Promise<void> => {
+    if (confirm(`Удалить пользователя ${user.name}?`)) {
+      const result = await deleteUser(user.id)
+      if (result.success) {
+        showNotification('success', 'Пользователь успешно удален')
+      } else {
+        showNotification('error', result.error || 'Ошибка при удалении')
+      }
+    }
+  }
+
+  const handleSaveUser = async (formData: UserFormData): Promise<void> => {
+    modalLoading.value = true
+
+    let result
+    if (modalMode.value === 'create') {
+      result = await createUser(formData)
+    } else if (selectedUser.value) {
+      result = await updateUser(selectedUser.value.id, formData)
+    }
+
+    modalLoading.value = false
+
+    if (result?.success) {
+      closeModal()
+      showNotification(
+        'success',
+        modalMode.value === 'create'
+          ? 'Пользователь успешно создан'
+          : 'Пользователь успешно обновлен'
+      )
+    } else if (result?.errors) {
+      // Показываем ошибки валидации в форме
+      showNotification(
+        'error',
+        result.error || 'Ошибка валидации',
+        result.errors
+      )
+    } else {
+      showNotification('error', result?.error || 'Произошла ошибка')
+    }
+  }
+
+  const closeModal = (): void => {
+    isModalOpen.value = false
+  }
+
+  const showNotification = (
+    type: 'success' | 'error',
+    message: string,
+    errors: Record<string, string> | null = null
+  ): void => {
+    notification.value = {
+      show: true,
+      type,
+      message,
+      errors
+    }
+
+    if (type === 'success') {
+      setTimeout(() => {
+        notification.value.show = false
+      }, 3000)
+    }
+  }
+
+  const handleMessage = (user: ExtendedUser | User): void => {
+    // Handle message action for user
+    console.log('Message sent to:', user.name)
+  }
+
+  const handleProfile = (user: ExtendedUser | User): void => {
     router.push(`/users/${user.id}`)
   }
 
@@ -809,65 +604,6 @@
     router.push(path)
     closeMobileSidebar()
   }
-
-  // Моковые данные для разработки
-  const mockUsers: Partial<ExtendedUser>[] = [
-    {
-      id: 'michael',
-      name: 'Michael Foster',
-      role: 'admin',
-      email: 'michael.foster@example.com',
-      phone: '+1 (555) 123-4567',
-      department: 'Engineering',
-      location: 'San Francisco, CA',
-      projects: '24',
-      commits: '1,432',
-      status: 'active',
-      avatar:
-        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-    },
-    {
-      id: 'lindsay',
-      name: 'Lindsay Walton',
-      role: 'editor',
-      email: 'lindsay.walton@example.com',
-      phone: '+1 (555) 234-5678',
-      department: 'Product',
-      location: 'New York, NY',
-      projects: '18',
-      commits: '967',
-      status: 'active',
-      avatar:
-        'https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-    },
-    {
-      id: 'courtney',
-      name: 'Courtney Henry',
-      role: 'viewer',
-      email: 'courtney.henry@example.com',
-      phone: '+1 (555) 345-6789',
-      department: 'Engineering',
-      location: 'Austin, TX',
-      projects: '31',
-      commits: '2,156',
-      status: 'blocked',
-      avatar:
-        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-    }
-  ]
-
-  // При монтировании загружаем пользователей
-  onMounted((): void => {
-    fetchUsers()
-  })
-
-  // Следим за изменением route
-  watch(
-    () => route.path,
-    (): void => {
-      closeMobileSidebar()
-    }
-  )
 </script>
 
 <style scoped>

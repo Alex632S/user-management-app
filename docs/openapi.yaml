@@ -1,0 +1,699 @@
+openapi: 3.0.0
+info:
+  title: User Management API
+  version: 1.0.0
+  description: |
+    API для управления пользователями с поддержкой расширенных данных, фильтрации и массовых операций.
+
+    Особенности:
+    - Полный CRUD для пользователей
+    - Фильтрация по роли, статусу и поиску
+    - Расширенные данные пользователей
+    - Блокировка/разблокировка пользователей
+    - Статистика
+    - Массовое удаление
+    - Шаблоны пользователей
+
+servers:
+  - url: /api
+    description: API сервер
+
+tags:
+  - name: Users
+    description: Операции с пользователями
+  - name: Statistics
+    description: Статистика пользователей
+  - name: Templates
+    description: Шаблоны пользователей
+
+components:
+  schemas:
+    UserRole:
+      type: string
+      enum: [admin, editor, viewer]
+      description: Роль пользователя
+
+    UserStatus:
+      type: string
+      enum: [active, blocked]
+      description: Статус пользователя
+
+    User:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - role
+        - status
+        - registeredAt
+        - lastLogin
+        - avatar
+        - phone
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Уникальный идентификатор пользователя
+          example: '123e4567-e89b-12d3-a456-426614174000'
+        name:
+          type: string
+          description: Полное имя пользователя
+          example: 'John Doe'
+        email:
+          type: string
+          format: email
+          description: Email пользователя (уникальный)
+          example: 'john.doe@example.com'
+        role:
+          $ref: '#/components/schemas/UserRole'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        registeredAt:
+          type: string
+          format: date-time
+          description: Дата регистрации
+          example: '2023-01-15T10:30:00Z'
+        lastLogin:
+          type: string
+          format: date-time
+          description: Дата последнего входа
+          example: '2024-03-04T14:20:00Z'
+        avatar:
+          type: string
+          format: uri
+          description: URL аватара пользователя
+          example: 'https://randomuser.me/api/portraits/men/1.jpg'
+        phone:
+          type: string
+          description: Номер телефона в различных форматах
+          example: '+1 (555) 123-4567'
+
+    ExtendedUser:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          required:
+            - department
+            - location
+            - projects
+            - commits
+          properties:
+            department:
+              type: string
+              description: Отдел пользователя
+              enum:
+                [
+                  Engineering,
+                  Product,
+                  Design,
+                  Marketing,
+                  Sales,
+                  HR,
+                  Finance,
+                  Infrastructure,
+                  Research,
+                  Customer Support
+                ]
+              example: 'Engineering'
+            location:
+              type: string
+              description: Локация пользователя
+              example: 'San Francisco, CA'
+            projects:
+              type: string
+              description: Количество проектов
+              example: '24'
+            commits:
+              type: string
+              description: Количество коммитов
+              example: '1432'
+
+    NewUser:
+      type: object
+      required:
+        - name
+        - email
+        - role
+        - status
+        - phone
+      properties:
+        name:
+          type: string
+          minLength: 2
+          description: Полное имя пользователя
+          example: 'Jane Smith'
+        email:
+          type: string
+          format: email
+          description: Email пользователя (должен быть уникальным)
+          example: 'jane.smith@example.com'
+        role:
+          $ref: '#/components/schemas/UserRole'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        phone:
+          type: string
+          description: Номер телефона (10-15 цифр)
+          example: '+1 (555) 987-6543'
+
+    UpdateUser:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          description: Полное имя пользователя
+          example: 'Jane Smith Updated'
+        email:
+          type: string
+          format: email
+          description: Email пользователя (должен быть уникальным)
+          example: 'jane.updated@example.com'
+        role:
+          $ref: '#/components/schemas/UserRole'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        phone:
+          type: string
+          description: Номер телефона
+          example: '+1 (555) 111-2222'
+        avatar:
+          type: string
+          format: uri
+          description: URL аватара
+          example: 'https://new-avatar-url.com/avatar.jpg'
+
+    UserFilters:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [all, admin, editor, viewer]
+          description: Фильтр по роли
+          example: 'admin'
+        status:
+          type: string
+          enum: [all, active, blocked]
+          description: Фильтр по статусу
+          example: 'active'
+        search:
+          type: string
+          description: Поиск по имени, email или телефону
+          example: 'john'
+
+    UsersResponse:
+      type: object
+      required:
+        - users
+        - total
+        - filters
+      properties:
+        users:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/User'
+              - $ref: '#/components/schemas/ExtendedUser'
+          description: Список пользователей
+        total:
+          type: integer
+          description: Общее количество пользователей после фильтрации
+          example: 15
+        filters:
+          $ref: '#/components/schemas/UserFilters'
+
+    UserResponse:
+      type: object
+      required:
+        - user
+      properties:
+        user:
+          oneOf:
+            - $ref: '#/components/schemas/User'
+            - $ref: '#/components/schemas/ExtendedUser'
+          description: Данные пользователя
+        message:
+          type: string
+          description: Сообщение о результате операции
+          example: 'Пользователь успешно получен'
+
+    UserStats:
+      type: object
+      required:
+        - total
+        - byRole
+        - byStatus
+        - newThisMonth
+      properties:
+        total:
+          type: integer
+          description: Общее количество пользователей
+          example: 20
+        byRole:
+          type: object
+          required:
+            - admin
+            - editor
+            - viewer
+          properties:
+            admin:
+              type: integer
+              example: 5
+            editor:
+              type: integer
+              example: 8
+            viewer:
+              type: integer
+              example: 7
+        byStatus:
+          type: object
+          required:
+            - active
+            - blocked
+          properties:
+            active:
+              type: integer
+              example: 18
+            blocked:
+              type: integer
+              example: 2
+        newThisMonth:
+          type: integer
+          description: Количество новых пользователей в этом месяце
+          example: 3
+
+    BatchDeleteRequest:
+      type: object
+      required:
+        - ids
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Массив ID пользователей для удаления
+          example: ['id1', 'id2', 'id3']
+
+    BatchDeleteResponse:
+      type: object
+      required:
+        - message
+        - deletedCount
+      properties:
+        message:
+          type: string
+          description: Сообщение о результате операции
+          example: 'Удалено пользователей: 2'
+        deletedCount:
+          type: integer
+          description: Количество удаленных пользователей
+          example: 2
+        notFoundIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: ID пользователей, которые не были найдены
+          example: ['not-found-id']
+
+    UserTemplate:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRole'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        department:
+          type: string
+          example: 'Engineering'
+        projects:
+          type: string
+          example: '24'
+        commits:
+          type: string
+          example: '1432'
+
+    TemplatesResponse:
+      type: object
+      required:
+        - templates
+        - roles
+        - statuses
+      properties:
+        templates:
+          type: object
+          properties:
+            admin:
+              $ref: '#/components/schemas/UserTemplate'
+            editor:
+              $ref: '#/components/schemas/UserTemplate'
+            viewer:
+              $ref: '#/components/schemas/UserTemplate'
+            blocked:
+              $ref: '#/components/schemas/UserTemplate'
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [admin, editor, viewer]
+        statuses:
+          type: array
+          items:
+            type: string
+            enum: [active, blocked]
+
+    ApiError:
+      type: object
+      required:
+        - message
+        - error
+      properties:
+        message:
+          type: string
+          description: Сообщение об ошибке
+          example: 'Пользователь не найден'
+        error:
+          type: string
+          description: Код ошибки
+          enum: [NOT_FOUND, VALIDATION_ERROR, INTERNAL_ERROR, INVALID_REQUEST]
+          example: 'NOT_FOUND'
+        errors:
+          type: object
+          description: Детальные ошибки валидации (поле -> сообщение)
+          additionalProperties:
+            type: string
+          example:
+            email: 'Пользователь с таким email уже существует'
+            phone: 'Некорректный формат телефона'
+
+  parameters:
+    userId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: ID пользователя
+    extended:
+      name: extended
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Получить расширенные данные пользователя
+    roleFilter:
+      name: role
+      in: query
+      schema:
+        type: string
+        enum: [all, admin, editor, viewer]
+        default: all
+      description: Фильтр по роли
+    statusFilter:
+      name: status
+      in: query
+      schema:
+        type: string
+        enum: [all, active, blocked]
+        default: all
+      description: Фильтр по статусу
+    searchQuery:
+      name: search
+      in: query
+      schema:
+        type: string
+      description: Поиск по имени, email или телефону
+
+paths:
+  /users:
+    get:
+      tags: [Users]
+      summary: Получить список пользователей
+      description: Возвращает список пользователей с возможностью фильтрации и поиска
+      parameters:
+        - $ref: '#/components/parameters/roleFilter'
+        - $ref: '#/components/parameters/statusFilter'
+        - $ref: '#/components/parameters/searchQuery'
+        - $ref: '#/components/parameters/extended'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsersResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+    post:
+      tags: [Users]
+      summary: Создать нового пользователя
+      description: Создает нового пользователя с указанными данными
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewUser'
+      responses:
+        '201':
+          description: Пользователь успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Получить пользователя по ID
+      parameters:
+        - $ref: '#/components/parameters/userId'
+        - $ref: '#/components/parameters/extended'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+    put:
+      tags: [Users]
+      summary: Полностью обновить пользователя
+      description: Заменяет все данные пользователя
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUser'
+      responses:
+        '200':
+          description: Пользователь успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+    patch:
+      tags: [Users]
+      summary: Частично обновить пользователя
+      description: Обновляет только указанные поля пользователя
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUser'
+      responses:
+        '200':
+          description: Пользователь успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+    delete:
+      tags: [Users]
+      summary: Удалить пользователя
+      description: Удаляет пользователя по ID
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      responses:
+        '200':
+          description: Пользователь успешно удален
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /users/{id}/block:
+    post:
+      tags: [Users]
+      summary: Заблокировать пользователя
+      description: Изменяет статус пользователя на "blocked"
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      responses:
+        '200':
+          description: Пользователь успешно заблокирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /users/{id}/unblock:
+    post:
+      tags: [Users]
+      summary: Разблокировать пользователя
+      description: Изменяет статус пользователя на "active"
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      responses:
+        '200':
+          description: Пользователь успешно разблокирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /users/batch-delete:
+    post:
+      tags: [Users]
+      summary: Массовое удаление пользователей
+      description: Удаляет нескольких пользователей по их ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchDeleteRequest'
+      responses:
+        '200':
+          description: Операция выполнена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchDeleteResponse'
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /users/stats:
+    get:
+      tags: [Statistics]
+      summary: Получить статистику пользователей
+      description: Возвращает статистику по пользователям (общее количество, распределение по ролям и статусам, новые за месяц)
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStats'
+
+  /users/templates:
+    get:
+      tags: [Templates]
+      summary: Получить шаблоны пользователей
+      description: Возвращает предопределенные шаблоны пользователей для разных ролей и статусов
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplatesResponse'
