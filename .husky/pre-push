@@ -1,2 +1,10 @@
-echo "🚀 Запуск всех unit-тестов перед пушем..."
+echo "🚀 Запуск всех проверок перед пушем..."
+
+echo "📝 Проверка TypeScript..."
+npm run typecheck
+
+echo "🧪 Запуск всех unit-тестов..."
 npm run test:unit
+
+echo "🔍 Проверка линтером..."
+npm run lint
