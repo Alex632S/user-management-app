@@ -1,4 +1,3 @@
-// scripts/run-tests.js
 import { execSync } from 'child_process'
 import fs from 'fs'
 
@@ -11,7 +10,6 @@ const IGNORED_PATTERNS = [
 ]
 
 try {
-  // Получаем список измененных файлов
   const changedFiles = execSync(
     'git diff --cached --name-only --diff-filter=ACMR'
   )
