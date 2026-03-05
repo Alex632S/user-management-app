@@ -209,32 +209,79 @@
           <!-- Заголовок раздела -->
 
           <!-- Хлебные крошки -->
-          <nav
-            class="mt-3 flex items-center gap-2 text-sm border-t border-gray-100 pt-3"
-            aria-label="Breadcrumb"
-          >
-            <a
-              href="#"
-              class="font-mono text-xs font-medium uppercase tracking-wider text-gray-500 hover:text-indigo-600 transition-colors"
-              @click.prevent="navigateTo('/')"
-            >
-              Dashboard
-            </a>
-            <Icon name="chevron-right" size="4" class="text-gray-400" />
-            <a
-              href="#"
-              class="font-mono text-xs font-medium uppercase tracking-wider text-gray-500 hover:text-indigo-600 transition-colors"
-              @click.prevent="navigateTo('/users')"
-            >
-              Team
-            </a>
-            <Icon name="chevron-right" size="4" class="text-gray-400" />
-            <span
-              class="font-mono text-xs font-medium uppercase tracking-wider text-indigo-600"
-            >
-              Team Members
-            </span>
-          </nav>
+          <div class="bg-white pt-5">
+            <nav class="flex" aria-label="Breadcrumb">
+              <ol role="list" class="flex items-center space-x-1">
+                <!-- Home -->
+                <li>
+                  <div>
+                    <a
+                      href="#"
+                      class="text-gray-400 hover:text-gray-500 flex items-center"
+                    >
+                      <svg
+                        class="h-5 w-5 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          clip-rule="evenodd"
+                          d="M9.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0117 11h-1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-6H3a1 1 0 01-.707-1.707l7-7z"
+                        />
+                      </svg>
+                      <span class="sr-only">Home</span>
+                    </a>
+                  </div>
+                </li>
+
+                <!-- Projects -->
+                <li>
+                  <div class="flex items-center">
+                    <svg
+                      class="h-5 w-5 text-gray-300"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                      />
+                    </svg>
+                    <a
+                      href="#"
+                      class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700"
+                    >
+                      Projects
+                    </a>
+                  </div>
+                </li>
+
+                <!-- Current page -->
+                <li>
+                  <div class="flex items-center">
+                    <svg
+                      class="h-5 w-5 text-gray-300"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                      />
+                    </svg>
+                    <span
+                      class="ml-4 text-sm font-medium text-gray-900"
+                      aria-current="page"
+                    >
+                      Project Nero
+                    </span>
+                  </div>
+                </li>
+              </ol>
+            </nav>
+          </div>
         </div>
 
         <!-- Контейнер для основного контента с прокруткой -->
