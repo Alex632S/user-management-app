@@ -2,6 +2,14 @@
 import { execSync } from 'child_process'
 import fs from 'fs'
 
+const IGNORED_PATTERNS = [
+  'commitlint.config.js',
+  'nuxt.config.ts',
+  '*.config.js',
+  'scripts/',
+  'tests/scripts/'
+]
+
 try {
   // Получаем список измененных файлов
   const changedFiles = execSync(
@@ -17,11 +25,13 @@ try {
     process.exit(0)
   }
 
-  // Фильтруем только файлы, которые могут иметь тесты
   const testableFiles = changedFiles.filter(
     (file) =>
       file.match(/\.(js|ts|vue)$/) &&
       !file.match(/\.test\.|\.spec\.|tests\//) &&
+      !IGNORED_PATTERNS.some(
+        (pattern) => file.includes(pattern) || file.match(new RegExp(pattern))
+      ) &&
       fs.existsSync(file)
   )
 
