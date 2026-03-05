@@ -6,10 +6,10 @@ on:
       sha:
         required: true
         type: string
-        description: "Commit SHA to deploy"
+        description: 'Commit SHA to deploy'
     outputs:
       url:
-        description: "Deployed URL"
+        description: 'Deployed URL'
         value: ${{ jobs.deploy.outputs.url }}
 
 permissions:
@@ -36,10 +36,17 @@ jobs:
         run: |
           echo "Проверка артефактов:"
           if [ -d "dist" ]; then
-            echo "dist/ найден"
+            echo "✅ dist/ найден"
             ls -la dist/
+            
+            # ✅ Проверяем наличие функций (опционально)
+            if [ -d ".netlify/functions-internal" ]; then
+              echo "✅ Netlify Functions найдены"
+            else
+              echo "ℹ️ Netlify Functions не найдены (статический сайт)"
+            fi
           else
-            echo "dist/ не найден!"
+            echo "❌ dist/ не найден!"
             exit 1
           fi
 
@@ -52,10 +59,12 @@ jobs:
           # Формируем параметры деплоя
           DEPLOY_ARGS="--dir=dist --prod --message=Deploy ${{ inputs.sha }}"
 
-          # Добавляем функции если есть
+          # ✅ Добавляем функции если они есть (не обязательно, но хорошо)
           if [ -d ".netlify/functions-internal" ]; then
             DEPLOY_ARGS="$DEPLOY_ARGS --functions=.netlify/functions-internal"
-            echo "Функции найдены в .netlify/functions-internal"
+            echo "✅ Функции найдены в .netlify/functions-internal, добавляем в деплой"
+          else
+            echo "ℹ️ Функции не найдены - деплоим только статику"
           fi
 
           echo "Запускаем деплой: netlify deploy $DEPLOY_ARGS"
@@ -73,7 +82,7 @@ jobs:
 
           # Сохраняем URL
           echo "url=$URL" >> $GITHUB_OUTPUT
-          echo "Деплой выполнен: $URL"
+          echo "✅ Деплой выполнен: $URL"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
@@ -83,7 +92,7 @@ jobs:
           URL="${{ steps.deploy.outputs.url }}"
 
           if [ -z "$URL" ] || [ "$URL" = "null" ]; then
-            echo "URL не получен, проверьте деплой вручную"
+            echo "⚠️ URL не получен, проверьте деплой вручную"
             exit 0
           fi
 
@@ -92,11 +101,11 @@ jobs:
           for i in {1..10}; do
             HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" 2>/dev/null || echo "000")
             if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "302" ]; then
-              echo "Сайт доступен (HTTP $HTTP_STATUS)"
+              echo "✅ Сайт доступен (HTTP $HTTP_STATUS)"
               exit 0
             fi
             echo "Попытка $i/10: статус $HTTP_STATUS"
             sleep 5
           done
 
-          echo "Сайт не отвечает, но деплой выполнен"
+          echo "⚠️ Сайт не отвечает, но деплой выполнен"

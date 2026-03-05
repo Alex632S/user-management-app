@@ -6,16 +6,16 @@ on:
       cache-key:
         required: true
         type: string
-        description: "Cache key for node_modules"
+        description: 'Cache key for node_modules'
       environment:
         required: true
         type: string
-        description: "Build environment (production/preview)"
+        description: 'Build environment (production/preview)'
       upload-artifacts:
         required: false
         type: boolean
         default: false
-        description: "Upload build artifacts"
+        description: 'Upload build artifacts'
 
 jobs:
   build:
@@ -31,8 +31,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: '20'
+          cache: 'npm'
 
       - name: Restore cache
         uses: actions/cache@v4
@@ -44,10 +44,15 @@ jobs:
         run: |
           rm -rf .nuxt .output dist .netlify/functions-internal
 
-      - name: Build project for Netlify
+      - name: Build project
         run: npm run build
         env:
+          # ✅ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Устанавливаем переменную для условного подключения модуля
+          NUXT_PUBLIC_NETLIFY_ENABLED: ${{ inputs.environment == 'production' && 'true' || 'false' }}
+
+          # ✅ Оставляем NITRO_PRESET, но он будет применяться только когда модуль подключен
           NITRO_PRESET: netlify
+
           NODE_ENV: ${{ inputs.environment == 'production' && 'production' || 'development' }}
           BUILD_ENV: ${{ inputs.environment }}
           BUILD_COMMIT: ${{ github.sha }}
@@ -56,20 +61,21 @@ jobs:
       - name: Verify build output
         run: |
           echo "Проверка структуры сборки:"
+          echo "Netlify модуль: ${{ inputs.environment == 'production' && 'ВКЛЮЧЕН' || 'ВЫКЛЮЧЕН' }}"
 
           if [ -d "dist" ]; then
-            echo "Папка dist найдена"
+            echo "✅ Папка dist найдена"
             echo "Содержит $(find dist -type f | wc -l) файлов"
           else
-            echo "Папка dist не найдена!"
+            echo "❌ Папка dist не найдена!"
             exit 1
           fi
 
           if [ -d ".netlify/functions-internal" ]; then
-            echo "Папка функций найдена"
+            echo "✅ Папка функций найдена (Netlify модуль работал)"
             echo "Содержит $(find .netlify/functions-internal -type f | wc -l) файлов"
           else
-            echo "Папка функций не найдена (может быть норм для статики)"
+            echo "ℹ️ Папка функций не найдена (Netlify модуль не использовался)"
           fi
 
           echo "Содержимое dist:"
