@@ -9,8 +9,21 @@
     "build:netlify": "cross-env NUXT_PUBLIC_NETLIFY_ENABLED=true nuxt build",
     "preview": "nuxt preview",
     "lint": "eslint . --ext .vue,.js,.ts --fix",
+    "lint:staged": "node tests/scripts/run-tests.js",
     "typecheck": "vue-tsc --noEmit --skipLibCheck",
-    "test": "vitest --run"
+    "test": "vitest --run",
+    "test:changed": "vitest related --run",
+    "test:unit": "vitest --run",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,ts,vue}": [
+      "eslint --fix",
+      "npm run test:staged"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@pinia/nuxt": "^0.11.3",
@@ -26,6 +39,8 @@
     "yup": "^1.7.1"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.4.3",
+    "@commitlint/config-conventional": "^20.4.3",
     "@faker-js/faker": "^10.3.0",
     "@mswjs/data": "^0.16.2",
     "@netlify/nuxt": "^0.2.24",
@@ -39,7 +54,9 @@
     "cross-env": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
+    "husky": "^9.1.7",
     "jsdom": "^28.1.0",
+    "lint-staged": "^16.3.2",
     "msw": "^2.12.10",
     "node-fetch": "^3.3.2",
     "openapi-typescript": "^7.13.0",

@@ -1,0 +1,2 @@
+echo "🔍 Запуск pre-commit хуков..."
+npm run lint:staged

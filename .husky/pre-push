@@ -1,0 +1,2 @@
+echo "🚀 Запуск всех unit-тестов перед пушем..."
+npm run test:unit

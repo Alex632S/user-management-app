@@ -1,0 +1,2 @@
+echo "📝 Проверка сообщения коммита..."
+npx --no -- commitlint --edit $1
