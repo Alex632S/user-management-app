@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nuxt dev",
     "build": "nuxt build",
+    "build:netlify": "cross-env NUXT_PUBLIC_NETLIFY_ENABLED=true nuxt build",
     "preview": "nuxt preview",
     "lint": "eslint . --ext .vue,.js,.ts --fix",
     "typecheck": "vue-tsc --noEmit --skipLibCheck",
@@ -35,6 +36,7 @@
     "@vitejs/plugin-vue": "^6.0.4",
     "@vitest/coverage-v8": "^4.0.18",
     "@vue/test-utils": "^2.4.6",
+    "cross-env": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "jsdom": "^28.1.0",
