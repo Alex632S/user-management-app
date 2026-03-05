@@ -15,7 +15,6 @@ export default defineNuxtConfig({
           stylistic: {
             semi: false,
             singleQuote: true,
-            commaDangle: 'never',
             printWidth: 100,
             bracketSpacing: true,
             arrowParens: true
