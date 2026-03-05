@@ -1,16 +1,11 @@
-<template>
-  <div>
-    <NuxtPage />
-  </div>
-</template>
-
 <script setup lang="ts">
-  import { onMounted } from 'vue'
-  import { useRouter } from 'vue-router'
+  import { ref } from 'vue'
 
-  const router = useRouter()
-
-  onMounted(() => {
-    router.push('/')
-  })
+  const layout = ref()
 </script>
+
+<template>
+  <NuxtLayout ref="layout">
+    <NuxtPage />
+  </NuxtLayout>
+</template>
