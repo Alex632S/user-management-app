@@ -4017,7 +4017,7 @@ function _expandFromEnv(value) {
 const _inlineRuntimeConfig = {
   "app": {
     "baseURL": "/",
-    "buildId": "452581ce-c66f-48e9-b88c-c6e80152569b",
+    "buildId": "033cdb78-c636-490c-b37f-c9e35f88b427",
     "buildAssetsDir": "/_nuxt/",
     "cdnURL": ""
   },
@@ -4026,6 +4026,22 @@ const _inlineRuntimeConfig = {
     "routeRules": {
       "/__nuxt_error": {
         "cache": false
+      },
+      "/": {
+        "ssr": true
+      },
+      "/admin/**": {
+        "ssr": false,
+        "swr": false
+      },
+      "/api/**": {
+        "cors": true,
+        "headers": {
+          "access-control-allow-origin": "*",
+          "access-control-allow-methods": "*",
+          "access-control-allow-headers": "*",
+          "access-control-max-age": "0"
+        }
       },
       "/_nuxt/builds/meta/**": {
         "headers": {
@@ -4697,5 +4713,5 @@ function getCacheHeaders(url) {
   return {};
 }
 
-export { $fetch as $, getResponseStatus as a, getQuery as b, createError$1 as c, defineRenderHandler as d, destr as e, getRouteRules as f, getResponseStatusText as g, joinURL as h, useNitroApp as i, joinRelativeURL as j, hasProtocol as k, parseURL as l, encodePath as m, decodePath as n, getContext as o, parseQuery as p, isScriptProtocol as q, withTrailingSlash as r, withoutTrailingSlash as s, sanitizeStatusCode as t, useRuntimeConfig as u, createHooks as v, withQuery as w, executeAsync as x, defu as y, handler as z };
+export { $fetch as $, getResponseStatus as a, getQuery as b, createError$1 as c, defineRenderHandler as d, destr as e, getRouteRules as f, getResponseStatusText as g, joinURL as h, useNitroApp as i, joinRelativeURL as j, encodePath as k, decodePath as l, hasProtocol as m, isScriptProtocol as n, getContext as o, parseURL as p, createHooks as q, executeAsync as r, sanitizeStatusCode as s, defu as t, useRuntimeConfig as u, parseQuery as v, withQuery as w, withTrailingSlash as x, withoutTrailingSlash as y, handler as z };
 //# sourceMappingURL=nitro.mjs.map

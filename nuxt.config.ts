@@ -60,30 +60,18 @@ export default defineNuxtConfig({
     shim: false
   },
 
-  ssr: true, // глобально SSR по умолчанию
+  ssr: true,
 
   routeRules: {
-    // Публичная часть - SSR для SEO
     '/': { ssr: true },
-    '/blog/**': { ssr: true },
-    '/products/**': { ssr: true },
-
-    // CMS часть - SPA (быстрее загрузка, не нужно SEO)
     '/admin/**': {
       ssr: false,
-      // Дополнительные опции
-      swr: false // не кэшировать
+
+      swr: false
     },
-    '/cms/**': { ssr: false },
 
-    // Статические страницы можно пререндерить
-    '/about': { prerender: true },
-    '/contacts': { prerender: true },
-
-    // API маршруты
     '/api/**': { cors: true }
   },
 
-  // Оптимизация для SPA части
-  spaLoadingTemplate: true // показывать лоадер при загрузке SPA
+  spaLoadingTemplate: true
 })
