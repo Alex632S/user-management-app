@@ -19,6 +19,7 @@ describe('Users API', () => {
   it('should return users', async () => {
     const res = await fetch('/api/users')
     const data = await res.json()
+    // test
 
     expect(data.users).toHaveLength(1)
     expect(data.users[0].name).toBe('John')
