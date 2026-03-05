@@ -159,10 +159,9 @@ export const useUserApi = () => {
   }
 }
 function useRuntimeConfig() {
-    return {
-        public: {
-            apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api'
-        }
+  return {
+    public: {
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api'
     }
+  }
 }
-

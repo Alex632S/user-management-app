@@ -6,7 +6,7 @@
     >
       <el-dialog-backdrop
         class="fixed inset-0 bg-gray-500/50 transition-opacity duration-300 ease-linear data-[closed]:opacity-0"
-      ></el-dialog-backdrop>
+      />
 
       <div tabindex="0" class="fixed inset-0 flex focus:outline-none">
         <el-dialog-panel

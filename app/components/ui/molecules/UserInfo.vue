@@ -2,8 +2,12 @@
   <div class="flex items-center">
     <Avatar :src="avatar" :alt="name" class="mr-3" />
     <div>
-      <Text size="sm" weight="medium" color="gray-700">{{ name }}</Text>
-      <Text size="xs" color="gray-500">{{ email }}</Text>
+      <Text size="sm" weight="medium" color="gray-700">
+        {{ name }}
+      </Text>
+      <Text size="xs" color="gray-500">
+        {{ email }}
+      </Text>
     </div>
   </div>
 </template>

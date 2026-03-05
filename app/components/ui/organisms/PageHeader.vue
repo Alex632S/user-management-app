@@ -3,7 +3,9 @@
     <div class="px-6 py-4">
       <div class="flex justify-between items-center">
         <h1 class="text-2xl font-semibold text-gray-800">
-          <slot name="title">{{ title }}</slot>
+          <slot name="title">
+            {{ title }}
+          </slot>
         </h1>
 
         <div v-if="showSearch" class="w-64">

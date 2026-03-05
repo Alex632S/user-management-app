@@ -64,8 +64,8 @@
 
       <!-- Мобильный сайдбар -->
       <MobileSidebar
-        ref="mobileSidebar"
         id="sidebar-mobile"
+        ref="mobileSidebar"
         @close="closeMobileSidebar"
       >
         <template #logo>
@@ -182,61 +182,110 @@
           <!-- Кнопка мобильного меню и кнопка создания пользователя -->
           <div class="flex justify-between items-center mb-4">
             <button
-              @click="openMobileSidebar"
               class="lg:hidden inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+              @click="openMobileSidebar"
             >
               <span class="sr-only">Открыть меню</span>
               <Icon name="menu" size="6" />
             </button>
-
+          </div>
+          <div class="flex justify-between">
+            <div>
+              <h1 class="text-2xl font-bold tracking-tight text-gray-900">
+                {{ pageTitle }}
+              </h1>
+              <p class="mt-1 text-sm text-gray-500">
+                {{ pageDescription }}
+              </p>
+            </div>
             <button
-              @click="openCreateModal"
               class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+              @click="openCreateModal"
             >
               <Icon name="plus" size="5" class="mr-2" />
               Создать пользователя
             </button>
           </div>
-
           <!-- Заголовок раздела -->
-          <h1 class="text-2xl font-bold tracking-tight text-gray-900">
-            {{ pageTitle }}
-          </h1>
-          <p class="mt-1 text-sm text-gray-500">
-            {{ pageDescription }}
-          </p>
 
           <!-- Хлебные крошки -->
-          <nav
-            class="mt-3 flex items-center gap-2 text-sm border-t border-gray-100 pt-3"
-            aria-label="Breadcrumb"
-          >
-            <a
-              href="#"
-              class="font-mono text-xs font-medium uppercase tracking-wider text-gray-500 hover:text-indigo-600 transition-colors"
-              @click.prevent="navigateTo('/')"
-            >
-              Dashboard
-            </a>
-            <Icon name="chevron-right" size="4" class="text-gray-400" />
-            <a
-              href="#"
-              class="font-mono text-xs font-medium uppercase tracking-wider text-gray-500 hover:text-indigo-600 transition-colors"
-              @click.prevent="navigateTo('/users')"
-            >
-              Team
-            </a>
-            <Icon name="chevron-right" size="4" class="text-gray-400" />
-            <span
-              class="font-mono text-xs font-medium uppercase tracking-wider text-indigo-600"
-            >
-              Team Members
-            </span>
-          </nav>
+          <div class="bg-white pt-5">
+            <nav class="flex" aria-label="Breadcrumb">
+              <ol role="list" class="flex items-center space-x-1">
+                <!-- Home -->
+                <li>
+                  <div>
+                    <a
+                      href="#"
+                      class="text-gray-400 hover:text-gray-500 flex items-center"
+                    >
+                      <svg
+                        class="h-5 w-5 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          clip-rule="evenodd"
+                          d="M9.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0117 11h-1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-6H3a1 1 0 01-.707-1.707l7-7z"
+                        />
+                      </svg>
+                      <span class="sr-only">Home</span>
+                    </a>
+                  </div>
+                </li>
+
+                <!-- Projects -->
+                <li>
+                  <div class="flex items-center">
+                    <svg
+                      class="h-5 w-5 text-gray-300"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                      />
+                    </svg>
+                    <a
+                      href="#"
+                      class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700"
+                    >
+                      Projects
+                    </a>
+                  </div>
+                </li>
+
+                <!-- Current page -->
+                <li>
+                  <div class="flex items-center">
+                    <svg
+                      class="h-5 w-5 text-gray-300"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                      />
+                    </svg>
+                    <span
+                      class="ml-4 text-sm font-medium text-gray-900"
+                      aria-current="page"
+                    >
+                      Project Nero
+                    </span>
+                  </div>
+                </li>
+              </ol>
+            </nav>
+          </div>
         </div>
 
         <!-- Контейнер для основного контента с прокруткой -->
-        <div class="h-[calc(100vh-260px)] overflow-y-auto">
+        <div class="h-[84%] overflow-y-auto">
           <!-- Состояние загрузки -->
           <div v-if="loading" class="flex items-center justify-center h-64">
             <div class="inline-flex items-center space-x-3 text-gray-600">
@@ -253,12 +302,12 @@
                   r="10"
                   stroke="currentColor"
                   stroke-width="4"
-                ></circle>
+                />
                 <path
                   class="opacity-75"
                   fill="currentColor"
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
+                />
               </svg>
               <span class="text-lg">Загрузка пользователей...</span>
             </div>
@@ -284,7 +333,9 @@
                 </svg>
               </div>
               <div class="ml-3">
-                <p class="text-sm text-red-700">{{ error }}</p>
+                <p class="text-sm text-red-700">
+                  {{ error }}
+                </p>
               </div>
             </div>
           </div>
@@ -335,9 +386,7 @@
               <UserCard
                 v-if="selectedUser"
                 :user="selectedUser"
-                @message="handleMessage"
-                @profile="handleProfile"
-                @edit="openEditModal"
+                @save="handleUpdateUser"
                 @delete="confirmDelete"
               />
               <div
@@ -511,11 +560,23 @@
     isModalOpen.value = true
   }
 
-  const openEditModal = (user: ExtendedUser | User): void => {
-    modalMode.value = 'edit'
-    setSelectedUser(user as ExtendedUser)
-    isModalOpen.value = true
+  const handleUpdateUser = async (
+    id: string,
+    data: Partial<UserFormData>
+  ): Promise<void> => {
+    const result = await updateUser(id, data)
+    if (result.success) {
+      showNotification('success', 'Пользователь успешно обновлен')
+    } else {
+      showNotification('error', result.error || 'Ошибка при обновлении')
+    }
   }
+
+  // const openEditModal = (user: ExtendedUser | User): void => {
+  //   modalMode.value = 'edit'
+  //   setSelectedUser(user as ExtendedUser)
+  //   isModalOpen.value = true
+  // }
 
   const confirmDelete = async (user: ExtendedUser | User): Promise<void> => {
     if (confirm(`Удалить пользователя ${user.name}?`)) {
