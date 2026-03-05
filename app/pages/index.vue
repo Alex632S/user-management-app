@@ -188,7 +188,16 @@
               <span class="sr-only">Открыть меню</span>
               <Icon name="menu" size="6" />
             </button>
-
+          </div>
+          <div class="flex justify-between">
+            <div>
+              <h1 class="text-2xl font-bold tracking-tight text-gray-900">
+                {{ pageTitle }}
+              </h1>
+              <p class="mt-1 text-sm text-gray-500">
+                {{ pageDescription }}
+              </p>
+            </div>
             <button
               @click="openCreateModal"
               class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
@@ -197,14 +206,7 @@
               Создать пользователя
             </button>
           </div>
-
           <!-- Заголовок раздела -->
-          <h1 class="text-2xl font-bold tracking-tight text-gray-900">
-            {{ pageTitle }}
-          </h1>
-          <p class="mt-1 text-sm text-gray-500">
-            {{ pageDescription }}
-          </p>
 
           <!-- Хлебные крошки -->
           <nav
@@ -236,7 +238,7 @@
         </div>
 
         <!-- Контейнер для основного контента с прокруткой -->
-        <div class="h-[calc(100vh-260px)] overflow-y-auto">
+        <div class="h-[84%] overflow-y-auto">
           <!-- Состояние загрузки -->
           <div v-if="loading" class="flex items-center justify-center h-64">
             <div class="inline-flex items-center space-x-3 text-gray-600">
@@ -335,9 +337,7 @@
               <UserCard
                 v-if="selectedUser"
                 :user="selectedUser"
-                @message="handleMessage"
-                @profile="handleProfile"
-                @edit="openEditModal"
+                @save="handleUpdateUser"
                 @delete="confirmDelete"
               />
               <div
@@ -511,11 +511,23 @@
     isModalOpen.value = true
   }
 
-  const openEditModal = (user: ExtendedUser | User): void => {
-    modalMode.value = 'edit'
-    setSelectedUser(user as ExtendedUser)
-    isModalOpen.value = true
+  const handleUpdateUser = async (
+    id: string,
+    data: Partial<UserFormData>
+  ): Promise<void> => {
+    const result = await updateUser(id, data)
+    if (result.success) {
+      showNotification('success', 'Пользователь успешно обновлен')
+    } else {
+      showNotification('error', result.error || 'Ошибка при обновлении')
+    }
   }
+
+  // const openEditModal = (user: ExtendedUser | User): void => {
+  //   modalMode.value = 'edit'
+  //   setSelectedUser(user as ExtendedUser)
+  //   isModalOpen.value = true
+  // }
 
   const confirmDelete = async (user: ExtendedUser | User): Promise<void> => {
     if (confirm(`Удалить пользователя ${user.name}?`)) {

@@ -141,7 +141,7 @@
               :disabled="loading"
               class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
             >
-              {{ loading ? 'Сохранение...' : 'Сохранить' }}
+              {{ loading ? 'Создание...' : 'Создать пользователя' }}
             </button>
           </div>
         </form>
@@ -152,7 +152,7 @@
 
 <script setup lang="ts">
   import { ref, reactive, watch } from 'vue'
-  import type { UserFormData, UserRole, UserStatus } from '~/types/user'
+  import type { UserFormData } from '~/types/user'
   import { DEPARTMENTS, LOCATIONS } from '~/types/user'
 
   const props = defineProps<{
@@ -179,7 +179,6 @@
   const form = reactive<UserFormData>({ ...defaultForm })
   const errors = reactive<Partial<Record<keyof UserFormData, string>>>({})
 
-  // Инициализация формы при изменении initialData
   watch(
     () => props.initialData,
     (data) => {
