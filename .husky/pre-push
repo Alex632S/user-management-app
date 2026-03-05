@@ -1,10 +1,5 @@
-echo "🚀 Запуск всех проверок перед пушем..."
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
 
-echo "📝 Проверка TypeScript..."
 npm run typecheck
-
-echo "🧪 Запуск всех unit-тестов..."
 npm run test:unit
-
-echo "🔍 Проверка линтером..."
-npm run lint

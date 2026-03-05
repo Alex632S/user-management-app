@@ -6,13 +6,13 @@ on:
       sha:
         required: true
         type: string
-        description: "Commit SHA to release"
+        description: 'Commit SHA to release'
     outputs:
       version:
-        description: "Released version"
+        description: 'Released version'
         value: ${{ jobs.release.outputs.version }}
       release_url:
-        description: "URL of the release"
+        description: 'URL of the release'
         value: ${{ jobs.release.outputs.release_url }}
 
 permissions:
@@ -36,7 +36,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
 
       - name: Get version from package.json
         id: package-version

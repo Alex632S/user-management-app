@@ -71,7 +71,6 @@
           </div>
           <div class="ml-4 flex-shrink-0 flex">
             <button
-              @click="close"
               class="inline-flex rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2"
               :class="{
                 'text-green-500 hover:text-green-600 focus:ring-green-500':
@@ -79,6 +78,7 @@
                 'text-red-500 hover:text-red-600 focus:ring-red-500':
                   type === 'error'
               }"
+              @click="close"
             >
               <span class="sr-only">Закрыть</span>
               <svg

@@ -1,10 +1,7 @@
 <template>
   <div class="fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4">
-      <div
-        class="fixed inset-0 bg-black opacity-30"
-        @click="$emit('close')"
-      ></div>
+      <div class="fixed inset-0 bg-black opacity-30" @click="$emit('close')" />
 
       <div class="relative bg-white rounded-lg max-w-md w-full p-6">
         <h3 class="text-lg font-medium text-gray-900 mb-4">
@@ -15,7 +12,7 @@
           }}
         </h3>
 
-        <form @submit.prevent="handleSubmit" class="space-y-4">
+        <form class="space-y-4" @submit.prevent="handleSubmit">
           <!-- Имя -->
           <div>
             <label class="block text-sm font-medium text-gray-700">Имя *</label>
@@ -131,8 +128,8 @@
           <div class="flex justify-end space-x-3 pt-4">
             <button
               type="button"
-              @click="$emit('close')"
               class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              @click="$emit('close')"
             >
               Отмена
             </button>

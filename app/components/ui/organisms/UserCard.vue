@@ -14,7 +14,7 @@
 
     <!-- Контент карточки с редактируемыми полями -->
     <div class="pt-16 pb-6 px-6">
-      <form @submit.prevent="saveChanges" class="space-y-4">
+      <form class="space-y-4" @submit.prevent="saveChanges">
         <!-- Верхняя часть с именем, ролью и статусом -->
         <div class="flex justify-between items-start gap-4">
           <div class="flex-1">
@@ -165,8 +165,8 @@
           <button
             v-if="hasChanges"
             type="button"
-            @click="cancelChanges"
             class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            @click="cancelChanges"
           >
             Отмена
           </button>
@@ -179,9 +179,9 @@
           </button>
           <button
             type="button"
-            @click="$emit('delete', user)"
             class="px-4 py-2 border border-red-300 text-red-700 rounded-md text-sm font-medium hover:bg-red-50 transition-colors"
             title="Удалить пользователя"
+            @click="$emit('delete', user)"
           >
             Удалить
           </button>

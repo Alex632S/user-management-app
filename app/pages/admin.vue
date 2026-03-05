@@ -35,8 +35,8 @@
         <!-- Выход -->
         <div class="p-4 border-t border-gray-800">
           <button
-            @click="logout"
             class="flex items-center w-full px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+            @click="logout"
           >
             <svg
               class="w-5 h-5 mr-3"

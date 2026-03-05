@@ -13,13 +13,17 @@
     </div>
     <div class="min-w-0 flex-1">
       <div class="flex items-center justify-between">
-        <p class="text-sm font-medium text-gray-900">{{ user.name }}</p>
+        <p class="text-sm font-medium text-gray-900">
+          {{ user.name }}
+        </p>
         <Badge :variant="user.status === 'active' ? 'success' : 'default'">
           {{ STATUS_LABELS[user.status] }}
         </Badge>
       </div>
       <div class="mt-1 flex items-center gap-x-2 text-xs text-gray-500">
-        <p class="truncate">{{ ROLE_LABELS[user.role] }}</p>
+        <p class="truncate">
+          {{ ROLE_LABELS[user.role] }}
+        </p>
         <span>•</span>
         <p>{{ formatPhone(user.phone) }}</p>
       </div>
