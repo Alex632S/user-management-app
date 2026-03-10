@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div class="h-full flex flex-col">
     <!-- Контейнер для основного контента с прокруткой -->
-    <div class="h-[84%] overflow-y-auto">
+    <div class="flex-1 overflow-y-auto min-h-0">
       <!-- Состояние загрузки -->
       <div v-if="loading" class="flex items-center justify-center h-64">
         <div class="inline-flex items-center space-x-3 text-gray-600">
@@ -80,14 +80,26 @@
             <span class="text-xs font-medium text-gray-500"
               >{{ filteredUsers.length }} участников</span
             >
-            <SortDropdown @select="handleSort" />
+
+            <!-- Улучшенная кнопка сортировки -->
+            <button
+              class="inline-flex items-center gap-x-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 hover:text-indigo-600 transition-all border border-gray-200"
+              @click="toggleSortOrder"
+            >
+              <span>Сортировка</span>
+              <Icon
+                :name="sortOrder === 'desc' ? 'chevron-down' : 'chevron-up'"
+                size="4"
+                color="gray-400"
+              />
+            </button>
           </div>
 
           <!-- Список пользователей (скроллируемый) -->
           <div class="flex-1 overflow-y-auto min-h-0 bg-white">
             <ul role="list" class="divide-y divide-gray-200">
               <UserListItem
-                v-for="user in filteredUsers"
+                v-for="user in sortedUsers"
                 :key="user.id"
                 :user="user"
                 :active="selectedUser?.id === user.id"
@@ -146,13 +158,15 @@
   import type MobileSidebar from '~/components/ui/organisms/MobileSidebar.vue'
   import UserCard from '~/components/ui/organisms/UserCard.vue'
   import SearchInput from '~/components/ui/atoms/SearchInput.vue'
-  import SortDropdown from '~/components/ui/molecules/SortDropdown.vue'
   import UserListItem from '~/components/ui/molecules/UserListItem.vue'
+  import Icon from '~/components/ui/atoms/Icon.vue'
   import UserFormModal from '~/components/ui/organisms/UserFormModal.vue'
   import NotificationToast from '~/components/ui/molecules/NotificationToast.vue'
 
+  const router = useRouter()
+  const mobileSidebar = ref<InstanceType<typeof MobileSidebar> | null>(null)
   const searchQuery = ref('')
-  const sortBy = ref('name')
+  const sortOrder = ref<'asc' | 'desc'>('desc') // По умолчанию сначала новые
 
   const {
     users,
@@ -196,6 +210,7 @@
     return 'Просмотр информации о членах команды и их активности'
   })
 
+  // Фильтрация по поиску
   const filteredUsers = computed((): ExtendedUser[] => {
     let filtered = composableFilteredUsers.value
 
@@ -211,25 +226,31 @@
       )
     }
 
-    // Сортировка
-    filtered.sort((a: ExtendedUser, b: ExtendedUser) => {
-      if (sortBy.value === 'name') {
-        return a.name.localeCompare(b.name)
-      }
-      if (sortBy.value === 'email') {
-        return a.email.localeCompare(b.email)
-      }
-      if (sortBy.value === 'role') {
-        return a.role.localeCompare(b.role)
-      }
-      if (sortBy.value === 'department') {
-        return (a.department || '').localeCompare(b.department || '')
-      }
-      return 0
-    })
-
     return filtered
   })
+
+  // Сортировка по дате создания (используем ID как fallback)
+  const sortedUsers = computed((): ExtendedUser[] => {
+    const users = [...filteredUsers.value]
+
+    return users.sort((a: ExtendedUser, b: ExtendedUser) => {
+      // Для демонстрации используем ID как числовое значение для сортировки
+      // В реальном приложении здесь должно быть поле createdAt
+      const idA = parseInt(a.id.replace(/\D/g, '')) || 0
+      const idB = parseInt(b.id.replace(/\D/g, '')) || 0
+
+      if (sortOrder.value === 'desc') {
+        return idB - idA // Сначала новые (больший ID)
+      } else {
+        return idA - idB // Сначала старые (меньший ID)
+      }
+    })
+  })
+
+  // Переключение порядка сортировки
+  const toggleSortOrder = (): void => {
+    sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
+  }
 
   // Статистика
   const activeUsers = computed(
@@ -255,8 +276,9 @@
     searchQuery.value = query
   }
 
-  const handleSort = (value: string): void => {
-    sortBy.value = value
+  const openCreateModal = (): void => {
+    modalMode.value = 'create'
+    isModalOpen.value = true
   }
 
   const handleUpdateUser = async (
@@ -337,8 +359,26 @@
     }
   }
 
+  const handleMessage = (user: ExtendedUser | User): void => {
+    // Handle message action for user
+    console.log('Message sent to:', user.name)
+  }
+
+  const handleProfile = (user: ExtendedUser | User): void => {
+    router.push(`/users/${user.id}`)
+  }
+
+  const openMobileSidebar = (): void => {
+    mobileSidebar.value?.open()
+  }
+
   const closeMobileSidebar = (): void => {
     console.log('Mobile sidebar closed')
+  }
+
+  const navigateTo = (path: string): void => {
+    router.push(path)
+    closeMobileSidebar()
   }
 </script>
 
@@ -356,12 +396,5 @@
   }
   .overflow-y-auto::-webkit-scrollbar-thumb:hover {
     background: #a1a1a1;
-  }
-
-  /* Медиа-запросы для мобильных устройств */
-  @media (max-width: 1023px) {
-    .h-\[calc\(100vh-260px\)\] {
-      height: auto;
-    }
   }
 </style>

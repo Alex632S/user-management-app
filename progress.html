@@ -1,0 +1,798 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      /* Стиль под старые Flash игры */
+      * {
+        box-sizing: border-box;
+        image-rendering: pixelated;
+        font-family: 'Press Start 2P', 'Courier New', monospace;
+      }
+
+      body {
+        background: #0a0f1e;
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+      }
+
+      /* Главное окно как в Flash-плеере */
+      .flash-widget {
+        max-width: 800px;
+        width: 100%;
+        background: #1a1f2e;
+        border: 4px solid #2a2f3e;
+        border-radius: 0;
+        box-shadow:
+          inset 0 0 0 2px #0a0f1e,
+          0 0 0 2px #3a3f4e,
+          10px 10px 0 rgba(0, 0, 0, 0.5);
+        padding: 20px;
+        position: relative;
+      }
+
+      /* Винтажный градиент как в старых играх */
+      .flash-widget::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+          circle at 20% 20%,
+          rgba(255, 255, 255, 0.1) 0%,
+          transparent 50%
+        );
+        pointer-events: none;
+      }
+
+      /* Полоска загрузки как в Flash играх */
+      .loading-bar {
+        background: #000;
+        border: 3px solid #3a3f4e;
+        box-shadow: inset 0 0 10px #000;
+        height: 30px;
+        margin: 10px 0;
+        position: relative;
+        image-rendering: pixelated;
+      }
+
+      .loading-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4caf50, #8bc34a);
+        width: 0%;
+        position: relative;
+        box-shadow: 0 0 10px #4caf50;
+        transition: width 0.3s;
+      }
+
+      .loading-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
+        animation: scan 2s linear infinite;
+      }
+
+      @keyframes scan {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      /* Счетчики в стиле RPG */
+      .stat-counter {
+        background: #000;
+        border: 2px solid #3a3f4e;
+        padding: 10px;
+        margin: 5px 0;
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #0ff;
+        text-shadow: 0 0 5px #0ff;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .stat-counter::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          rgba(0, 255, 255, 0.1) 0px,
+          transparent 2px
+        );
+        pointer-events: none;
+      }
+
+      /* Кнопки как в старых флеш-играх */
+      .flash-button {
+        background: #2a2f3e;
+        border: none;
+        border-top: 2px solid #5a5f6e;
+        border-left: 2px solid #5a5f6e;
+        border-bottom: 2px solid #0a0f1e;
+        border-right: 2px solid #0a0f1e;
+        color: #fff;
+        font-family: 'Press Start 2P', monospace;
+        font-size: 10px;
+        padding: 10px 15px;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.1s;
+        image-rendering: pixelated;
+      }
+
+      .flash-button:active {
+        border-top: 2px solid #0a0f1e;
+        border-left: 2px solid #0a0f1e;
+        border-bottom: 2px solid #5a5f6e;
+        border-right: 2px solid #5a5f6e;
+        transform: translate(2px, 2px);
+      }
+
+      /* Карточки компонентов */
+      .component-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+        margin: 20px 0;
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 10px;
+        background: #0f1423;
+        border: 3px solid #2a2f3e;
+        scrollbar-width: thin;
+        scrollbar-color: #4caf50 #1a1f2e;
+      }
+
+      .component-grid::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      .component-grid::-webkit-scrollbar-track {
+        background: #1a1f2e;
+      }
+
+      .component-grid::-webkit-scrollbar-thumb {
+        background: #4caf50;
+        border: 2px solid #2a2f3e;
+      }
+
+      .component-item {
+        background: #1a1f2e;
+        border: 2px solid #2a2f3e;
+        padding: 10px;
+        font-size: 10px;
+        color: #fff;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .component-item.completed {
+        background: #1a3a1a;
+        border-color: #4caf50;
+        opacity: 0.8;
+      }
+
+      .component-item.completed::after {
+        content: '✓';
+        position: absolute;
+        top: 2px;
+        right: 5px;
+        color: #4caf50;
+        font-size: 14px;
+        text-shadow: 0 0 5px #4caf50;
+      }
+
+      .component-item:hover {
+        border-color: #0ff;
+        box-shadow: 0 0 10px #0ff;
+        transform: scale(1.02);
+      }
+
+      .checkbox-custom {
+        width: 15px;
+        height: 15px;
+        background: #000;
+        border: 2px solid #3a3f4e;
+        display: inline-block;
+        position: relative;
+      }
+
+      .component-item.completed .checkbox-custom::after {
+        content: '✓';
+        position: absolute;
+        top: -5px;
+        left: 1px;
+        color: #4caf50;
+        font-size: 14px;
+      }
+
+      /* Ачивки как в играх */
+      .achievement {
+        background: linear-gradient(135deg, #2a2f3e, #1a1f2e);
+        border: 2px solid gold;
+        padding: 10px;
+        margin: 5px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: gold;
+        font-size: 10px;
+        transform: skewX(-5deg);
+      }
+
+      .achievement.locked {
+        border-color: #3a3f4e;
+        color: #666;
+        opacity: 0.5;
+      }
+
+      .achievement-icon {
+        width: 30px;
+        height: 30px;
+        background: #000;
+        border: 2px solid currentColor;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transform: rotate(5deg);
+      }
+
+      /* XP бар */
+      .xp-bar {
+        background: #000;
+        border: 3px solid gold;
+        height: 25px;
+        margin: 20px 0;
+        position: relative;
+      }
+
+      .xp-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #ffd700, #ffa500);
+        width: 0%;
+        position: relative;
+      }
+
+      .xp-fill::after {
+        content: '⚡';
+        position: absolute;
+        right: 5px;
+        top: 2px;
+        color: #fff;
+        font-size: 14px;
+        text-shadow: 0 0 5px #000;
+      }
+
+      /* Мигающий текст */
+      .blink {
+        animation: blink 1s step-end infinite;
+        color: #ff0;
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0;
+        }
+      }
+
+      /* Уровни */
+      .level-badge {
+        background: gold;
+        color: #000;
+        padding: 5px 10px;
+        font-weight: bold;
+        clip-path: polygon(
+          10% 0%,
+          90% 0%,
+          100% 50%,
+          90% 100%,
+          10% 100%,
+          0% 50%
+        );
+        display: inline-block;
+        font-size: 12px;
+        text-align: center;
+        min-width: 60px;
+      }
+    </style>
+    <!-- Подключаем пиксельный шрифт -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="flash-widget" id="app">
+      <!-- Заголовок как в игре -->
+      <div style="text-align: center; margin-bottom: 20px">
+        <h1
+          style="
+            color: #0ff;
+            font-size: 16px;
+            text-shadow:
+              3px 3px 0 #00f,
+              5px 5px 0 #000;
+          "
+        >
+          ⚔️ DEV QUEST: FRONTEND LEGENDS ⚔️
+        </h1>
+        <div class="level-badge" id="levelDisplay">LVL 1</div>
+      </div>
+
+      <!-- Основные статы -->
+      <div
+        style="
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          margin-bottom: 20px;
+        "
+      >
+        <div class="stat-counter">
+          <span>📊 PROGRESS:</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="stat-counter">
+          <span>⚡ XP:</span>
+          <span id="xpDisplay">0/1000</span>
+        </div>
+        <div class="stat-counter">
+          <span>🔧 COMPONENTS:</span>
+          <span id="componentsDone">0/45</span>
+        </div>
+        <div class="stat-counter">
+          <span>🎯 PAGES:</span>
+          <span id="pagesDone">0/2</span>
+        </div>
+      </div>
+
+      <!-- XP Bar -->
+      <div class="xp-bar">
+        <div class="xp-fill" id="xpBar" style="width: 0%"></div>
+      </div>
+
+      <!-- Основной прогресс бар -->
+      <div class="loading-bar">
+        <div class="loading-fill" id="progressBar" style="width: 0%"></div>
+      </div>
+
+      <!-- Секции компонентов (как уровни в игре) -->
+      <div style="display: flex; gap: 5px; margin: 10px 0">
+        <button class="flash-button" onclick="filterAtoms()">🔵 АТОМЫ</button>
+        <button class="flash-button" onclick="filterMolecules()">
+          🟠 МОЛЕКУЛЫ
+        </button>
+        <button class="flash-button" onclick="filterOrganisms()">
+          🟢 ОРГАНИЗМЫ
+        </button>
+        <button class="flash-button" onclick="filterAll()">📋 ВСЕ</button>
+      </div>
+
+      <!-- Сетка компонентов -->
+      <div class="component-grid" id="componentGrid"></div>
+
+      <!-- Ачивки -->
+      <div style="margin: 20px 0">
+        <h3 style="color: gold; font-size: 12px">🏆 ДОСТИЖЕНИЯ</h3>
+        <div id="achievements"></div>
+      </div>
+
+      <!-- Кнопки управления -->
+      <div
+        style="
+          display: flex;
+          gap: 10px;
+          justify-content: center;
+          margin-top: 20px;
+        "
+      >
+        <button class="flash-button" onclick="saveGame()">💾 СОХРАНИТЬ</button>
+        <button class="flash-button" onclick="resetProgress()">
+          🔄 НОВАЯ ИГРА
+        </button>
+        <button class="flash-button" onclick="cheatCode()">🎮 КОД</button>
+      </div>
+
+      <!-- Консоль -->
+      <div
+        style="
+          background: #000;
+          color: #0f0;
+          padding: 10px;
+          margin-top: 20px;
+          font-size: 8px;
+          border: 2px solid #3a3f4e;
+        "
+      >
+        <span id="consoleText">> ИГРА ЗАГРУЖЕНА. ЖДУ КОМАНД...</span>
+        <span class="blink">_</span>
+      </div>
+    </div>
+
+    <script>
+      // Данные компонентов (из твоего проекта)
+      const components = [
+        // Атомы (синие)
+        { name: 'Avatar.vue', category: 'atoms', completed: false, xp: 50 },
+        { name: 'Badge.vue', category: 'atoms', completed: false, xp: 30 },
+        { name: 'Icon.vue', category: 'atoms', completed: false, xp: 40 },
+        {
+          name: 'SearchInput.vue',
+          category: 'atoms',
+          completed: false,
+          xp: 60
+        },
+        { name: 'Text.vue', category: 'atoms', completed: false, xp: 20 },
+
+        // Молекулы (оранжевые)
+        {
+          name: 'NavItem.vue',
+          category: 'molecules',
+          completed: false,
+          xp: 70
+        },
+        {
+          name: 'NotificationToast.vue',
+          category: 'molecules',
+          completed: false,
+          xp: 80
+        },
+        {
+          name: 'SearchBar.vue',
+          category: 'molecules',
+          completed: false,
+          xp: 65
+        },
+        {
+          name: 'SortDropdown.vue',
+          category: 'molecules',
+          completed: false,
+          xp: 55
+        },
+        {
+          name: 'UserInfo.vue',
+          category: 'molecules',
+          completed: false,
+          xp: 60
+        },
+        {
+          name: 'UserListItem.vue',
+          category: 'molecules',
+          completed: false,
+          xp: 45
+        },
+
+        // Организмы (зеленые)
+        {
+          name: 'MobileSidebar.vue',
+          category: 'organisms',
+          completed: false,
+          xp: 100
+        },
+        {
+          name: 'Navigation.vue',
+          category: 'organisms',
+          completed: false,
+          xp: 90
+        },
+        {
+          name: 'PageHeader.vue',
+          category: 'organisms',
+          completed: false,
+          xp: 75
+        },
+        {
+          name: 'Sidebar.vue',
+          category: 'organisms',
+          completed: false,
+          xp: 110
+        },
+        {
+          name: 'SidebarDivider.vue',
+          category: 'organisms',
+          completed: false,
+          xp: 40
+        },
+        {
+          name: 'SidebarLogo.vue',
+          category: 'organisms',
+          completed: false,
+          xp: 50
+        },
+        {
+          name: 'SidebarNav.vue',
+          category: 'organisms',
+          completed: false,
+          xp: 85
+        },
+        {
+          name: 'SidebarNavGroup.vue',
+          category: 'organisms',
+          completed: false,
+          xp: 70
+        },
+        {
+          name: 'SidebarNavItem.vue',
+          category: 'organisms',
+          completed: false,
+          xp: 60
+        },
+        {
+          name: 'SidebarUser.vue',
+          category: 'organisms',
+          completed: false,
+          xp: 65
+        },
+        {
+          name: 'UserCard.vue',
+          category: 'organisms',
+          completed: false,
+          xp: 80
+        },
+        {
+          name: 'UserFormModal.vue',
+          category: 'organisms',
+          completed: false,
+          xp: 95
+        },
+
+        // Страницы
+        { name: 'index.vue', category: 'pages', completed: false, xp: 150 },
+        { name: 'admin.vue', category: 'pages', completed: false, xp: 200 },
+
+        // Composables
+        {
+          name: 'useUserApi.ts',
+          category: 'composables',
+          completed: false,
+          xp: 120
+        },
+        {
+          name: 'useUsersPage.ts',
+          category: 'composables',
+          completed: false,
+          xp: 120
+        },
+
+        // Остальное
+        { name: 'tailwind.css', category: 'styles', completed: false, xp: 30 },
+        { name: 'main.scss', category: 'styles', completed: false, xp: 40 },
+        { name: 'users.ts', category: 'api', completed: false, xp: 100 },
+        {
+          name: 'msw.client.ts',
+          category: 'plugins',
+          completed: false,
+          xp: 80
+        },
+        { name: 'user.ts', category: 'types', completed: false, xp: 50 }
+      ]
+
+      let currentFilter = 'all'
+      let totalXP = 0
+      const maxXP = components.reduce((sum, c) => sum + c.xp, 0)
+
+      // Функции фильтрации
+      function filterAtoms() {
+        currentFilter = 'atoms'
+        renderComponents()
+      }
+      function filterMolecules() {
+        currentFilter = 'molecules'
+        renderComponents()
+      }
+      function filterOrganisms() {
+        currentFilter = 'organisms'
+        renderComponents()
+      }
+      function filterAll() {
+        currentFilter = 'all'
+        renderComponents()
+      }
+
+      // Рендер компонентов
+      function renderComponents() {
+        const grid = document.getElementById('componentGrid')
+        const filtered =
+          currentFilter === 'all'
+            ? components
+            : components.filter((c) => c.category === currentFilter)
+
+        grid.innerHTML = filtered
+          .map(
+            (comp) => `
+                <div class="component-item ${comp.completed ? 'completed' : ''}" 
+                     onclick="toggleComponent('${comp.name}')">
+                    <span class="checkbox-custom"></span>
+                    <span style="flex: 1;">${comp.name}</span>
+                    <span style="color: #0ff; font-size: 8px;">+${comp.xp}XP</span>
+                </div>
+            `
+          )
+          .join('')
+      }
+
+      // Переключение статуса компонента
+      function toggleComponent(name) {
+        const comp = components.find((c) => c.name === name)
+        if (comp) {
+          comp.completed = !comp.completed
+          updateProgress()
+          renderComponents()
+          renderAchievements()
+          document.getElementById('consoleText').innerHTML =
+            `> ${comp.completed ? '✓ ВЫПОЛНЕНО' : '✗ ОТМЕНЕНО'}: ${name}`
+        }
+      }
+
+      // Обновление прогресса
+      function updateProgress() {
+        const completed = components.filter((c) => c.completed).length
+        const total = components.length
+        const percent = Math.round((completed / total) * 100)
+
+        totalXP = components
+          .filter((c) => c.completed)
+          .reduce((sum, c) => sum + c.xp, 0)
+        const xpPercent = Math.round((totalXP / maxXP) * 100)
+
+        // Обновление UI
+        document.getElementById('progressPercent').innerHTML = `${percent}%`
+        document.getElementById('progressBar').style.width = `${percent}%`
+        document.getElementById('xpBar').style.width = `${xpPercent}%`
+        document.getElementById('xpDisplay').innerHTML =
+          `${totalXP}/${maxXP} XP`
+        document.getElementById('componentsDone').innerHTML =
+          `${completed}/${total}`
+
+        // Обновление уровня
+        const level = Math.floor(totalXP / 200) + 1
+        document.getElementById('levelDisplay').innerHTML = `LVL ${level}`
+      }
+
+      // Рендер ачивок
+      function renderAchievements() {
+        const completed = components.filter((c) => c.completed).length
+        const achievements = [
+          {
+            name: 'НОВИЧОК',
+            requirement: 5,
+            icon: '🌱',
+            completed: completed >= 5
+          },
+          {
+            name: 'КОДЕР',
+            requirement: 15,
+            icon: '💻',
+            completed: completed >= 15
+          },
+          {
+            name: 'МАСТЕР',
+            requirement: 25,
+            icon: '⚔️',
+            completed: completed >= 25
+          },
+          {
+            name: 'ЛЕГЕНДА',
+            requirement: 35,
+            icon: '👑',
+            completed: completed >= 35
+          },
+          {
+            name: 'БОГ ФРОНТЕНДА',
+            requirement: 45,
+            icon: '⚡',
+            completed: completed >= 45
+          }
+        ]
+
+        const achDiv = document.getElementById('achievements')
+        achDiv.innerHTML = achievements
+          .map(
+            (ach) => `
+                <div class="achievement ${!ach.completed ? 'locked' : ''}">
+                    <div class="achievement-icon">${ach.icon}</div>
+                    <div style="flex: 1;">
+                        <div>${ach.name}</div>
+                        <div style="color: #666; font-size: 8px;">${ach.completed ? 'ВЫПОЛНЕНО' : `НУЖНО: ${ach.requirement} КОМПОНЕНТОВ`}</div>
+                    </div>
+                    ${ach.completed ? '<span style="color: gold;">✓</span>' : ''}
+                </div>
+            `
+          )
+          .join('')
+      }
+
+      // Сохранение игры
+      function saveGame() {
+        const gameState = {
+          components: components.map((c) => ({
+            name: c.name,
+            completed: c.completed
+          })),
+          totalXP: totalXP
+        }
+        localStorage.setItem('flashProgress', JSON.stringify(gameState))
+        document.getElementById('consoleText').innerHTML = '> ИГРА СОХРАНЕНА!'
+      }
+
+      // Загрузка игры
+      function loadGame() {
+        const saved = localStorage.getItem('flashProgress')
+        if (saved) {
+          const gameState = JSON.parse(saved)
+          components.forEach((comp) => {
+            const savedComp = gameState.components.find(
+              (c) => c.name === comp.name
+            )
+            if (savedComp) comp.completed = savedComp.completed
+          })
+          updateProgress()
+          renderComponents()
+          renderAchievements()
+          document.getElementById('consoleText').innerHTML = '> ИГРА ЗАГРУЖЕНА!'
+        }
+      }
+
+      // Сброс прогресса
+      function resetProgress() {
+        if (confirm('НАЧАТЬ НОВУЮ ИГРУ?')) {
+          components.forEach((c) => (c.completed = false))
+          updateProgress()
+          renderComponents()
+          renderAchievements()
+          document.getElementById('consoleText').innerHTML =
+            '> НОВАЯ ИГРА НАЧАТА!'
+        }
+      }
+
+      // Чит-код (Konami code)
+      function cheatCode() {
+        components.forEach((c) => (c.completed = true))
+        updateProgress()
+        renderComponents()
+        renderAchievements()
+        document.getElementById('consoleText').innerHTML =
+          '> ЧИТ-КОД АКТИВИРОВАН! +9999 XP'
+      }
+
+      // Инициализация
+      window.onload = function () {
+        loadGame()
+        renderComponents()
+        renderAchievements()
+      }
+    </script>
+  </body>
+</html>

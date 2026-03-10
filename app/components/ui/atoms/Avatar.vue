@@ -2,7 +2,7 @@
   <img class="w-8 h-8 rounded-full object-cover" :src="src" :alt="alt" />
 </template>
 
-<script setup>
+<script setup lang="ts">
   defineProps({
     src: {
       type: String,

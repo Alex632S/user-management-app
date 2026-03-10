@@ -8,13 +8,6 @@
 
         <template #nav>
           <SidebarNavGroup>
-            <!-- <SidebarNavItem
-              to="/"
-              icon="dashboard"
-              :active="route.path === '/'"
-            >
-              Dashboard
-            </SidebarNavItem> -->
             <SidebarNavItem
               to="/users"
               icon="team"
@@ -174,11 +167,10 @@
       </MobileSidebar>
 
       <!-- Основной контент -->
-      <!-- Основной контент -->
-      <main class="flex-1 overflow-hidden lg:pl-0">
+      <main class="flex-1 flex flex-col overflow-hidden lg:pl-0">
         <!-- Хедер с заголовком (фиксированный) -->
         <div
-          class="sticky top-0 z-40 border-b border-gray-200 bg-white px-4 py-4 shadow-sm sm:px-6 lg:px-8"
+          class="flex-none border-b border-gray-200 bg-white px-4 py-4 shadow-sm sm:px-6 lg:px-8"
         >
           <!-- Кнопка мобильного меню и кнопка создания пользователя -->
           <div class="flex justify-between items-center mb-4">
@@ -286,7 +278,9 @@
         </div>
 
         <!-- Контейнер для основного контента с прокруткой -->
-        <slot />
+        <div class="flex-1 overflow-hidden">
+          <slot />
+        </div>
       </main>
     </div>
 
