@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
+import path from 'path'
 
 export default defineConfig({
   plugins: [vue()],
@@ -10,5 +11,11 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/users.test.ts']
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '~': path.resolve(__dirname, './src') // добавляем тильду
+    }
   }
 })
