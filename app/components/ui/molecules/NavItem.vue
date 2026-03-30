@@ -1,11 +1,5 @@
 <template>
-  <a
-    :href="to"
-    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg"
-    :class="[
-      active ? 'bg-gray-100 text-gray-700' : 'text-gray-600 hover:bg-gray-50'
-    ]"
-  >
+  <a :href="to" class="nav-link" :class="{ 'nav-link--active': active }">
     <Icon
       v-if="icon"
       :name="icon"
@@ -23,8 +17,8 @@
 </template>
 
 <script setup>
-  import Icon from '../atoms/Icon.vue'
-  import Text from '../atoms/Text.vue'
+  import Icon from '~/components/ui/atoms/Icon.vue'
+  import Text from '~/components/ui/atoms/Text.vue'
 
   defineProps({
     to: {
@@ -41,3 +35,26 @@
     }
   })
 </script>
+
+<style scoped lang="scss">
+  .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    color: #4b5563;
+    transition: all 0.2s ease;
+    text-decoration: none;
+
+    &:hover {
+      background-color: #f9fafb;
+    }
+
+    &--active {
+      background-color: #f3f4f6;
+      color: #374151;
+    }
+  }
+</style>
