@@ -1,100 +1,60 @@
 <template>
   <div
-    class="fixed top-4 right-4 z-50 max-w-md w-full animate-slide-in"
+    class="notification"
     :class="{
-      'animate-slide-out': closing
+      'notification--closing': closing
     }"
   >
     <div
-      class="rounded-lg shadow-lg overflow-hidden"
-      :class="{
-        'bg-green-50 border border-green-200': type === 'success',
-        'bg-red-50 border border-red-200': type === 'error'
-      }"
+      class="notification__container"
+      :class="`notification__container--${type}`"
     >
-      <div class="p-4">
-        <div class="flex items-start">
-          <div class="flex-shrink-0">
-            <!-- Иконка успеха -->
-            <svg
-              v-if="type === 'success'"
-              class="h-5 w-5 text-green-400"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            <!-- Иконка ошибки -->
-            <svg
-              v-else
-              class="h-5 w-5 text-red-400"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clip-rule="evenodd"
-              />
-            </svg>
+      <div class="notification__content">
+        <div class="notification__icon-wrapper">
+          <Icon
+            :name="type === 'success' ? 'success' : 'error'"
+            :color="type === 'success' ? 'green-500' : 'red-500'"
+            size="5"
+            class="notification__icon"
+          />
+        </div>
+
+        <div class="notification__message-wrapper">
+          <p
+            class="notification__message"
+            :class="`notification__message--${type}`"
+          >
+            {{ message }}
+          </p>
+
+          <div
+            v-if="errors && Object.keys(errors).length > 0"
+            class="notification__errors"
+            :class="`notification__errors--${type}`"
+          >
+            <ul class="notification__errors-list">
+              <li v-for="(errorMsg, field) in errors" :key="field">
+                <span class="notification__errors-field">{{ field }}:</span>
+                {{ errorMsg }}
+              </li>
+            </ul>
           </div>
-          <div class="ml-3 w-0 flex-1">
-            <p
-              class="text-sm font-medium"
-              :class="{
-                'text-green-800': type === 'success',
-                'text-red-800': type === 'error'
-              }"
-            >
-              {{ message }}
-            </p>
-            <div
-              v-if="errors && Object.keys(errors).length > 0"
-              class="mt-2 text-sm"
-              :class="{
-                'text-green-700': type === 'success',
-                'text-red-700': type === 'error'
-              }"
-            >
-              <ul class="list-disc pl-5 space-y-1">
-                <li v-for="(errorMsg, field) in errors" :key="field">
-                  <span class="font-medium">{{ field }}:</span> {{ errorMsg }}
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div class="ml-4 flex-shrink-0 flex">
-            <button
-              class="inline-flex rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2"
-              :class="{
-                'text-green-500 hover:text-green-600 focus:ring-green-500':
-                  type === 'success',
-                'text-red-500 hover:text-red-600 focus:ring-red-500':
-                  type === 'error'
-              }"
-              @click="close"
-            >
-              <span class="sr-only">Закрыть</span>
-              <svg
-                class="h-5 w-5"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </button>
-          </div>
+        </div>
+
+        <div class="notification__close-wrapper">
+          <button
+            class="notification__close-button"
+            :class="`notification__close-button--${type}`"
+            @click="close"
+          >
+            <span class="sr-only">Закрыть</span>
+            <Icon
+              name="x"
+              :color="type === 'success' ? 'green-500' : 'red-500'"
+              size="5"
+              class="notification__close-icon"
+            />
+          </button>
         </div>
       </div>
     </div>
@@ -103,6 +63,7 @@
 
 <script setup lang="ts">
   import { ref } from 'vue'
+  import Icon from '~/components/ui/atoms/Icon.vue'
 
   const props = defineProps<{
     type: 'success' | 'error'
@@ -123,7 +84,6 @@
     }, 200)
   }
 
-  // Автоматическое закрытие для успешных уведомлений
   if (props.type === 'success') {
     setTimeout(() => {
       close()
@@ -131,7 +91,42 @@
   }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+  @use 'sass:map';
+
+  $colors: (
+    success: (
+      bg: #f0fdf4,
+      border: #bbf7d0,
+      icon: #4ade80,
+      text: #166534,
+      hover: #16a34a,
+      ring: #22c55e
+    ),
+    error: (
+      bg: #fef2f2,
+      border: #fecaca,
+      icon: #f87171,
+      text: #991b1b,
+      hover: #dc2626,
+      ring: #ef4444
+    )
+  );
+
+  $shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  $border-radius-lg: 0.5rem;
+  $spacing-1: 0.25rem;
+  $spacing-2: 0.5rem;
+  $spacing-3: 0.75rem;
+  $spacing-4: 1rem;
+  $spacing-5: 1.25rem;
+
+  @function color($type, $key) {
+    @return map.get($colors, $type, $key);
+  }
+
   @keyframes slide-in {
     from {
       transform: translateX(100%);
@@ -154,11 +149,171 @@
     }
   }
 
-  .animate-slide-in {
+  .notification {
+    position: fixed;
+    top: $spacing-4;
+    right: $spacing-4;
+    z-index: 50;
+    max-width: 28rem;
+    width: 100%;
     animation: slide-in 0.3s ease-out;
+
+    &--closing {
+      animation: slide-out 0.2s ease-in forwards;
+    }
+
+    &__container {
+      border-radius: $border-radius-lg;
+      box-shadow: $shadow-lg;
+      overflow: hidden;
+
+      &--success {
+        background-color: color(success, bg);
+        border: 1px solid color(success, border);
+      }
+
+      &--error {
+        background-color: color(error, bg);
+        border: 1px solid color(error, border);
+      }
+    }
+
+    &__content {
+      display: flex;
+      padding: $spacing-4;
+    }
+
+    &__icon-wrapper {
+      display: flex;
+      flex-shrink: 0;
+      align-items: center;
+    }
+
+    &__icon {
+      height: 1.25rem;
+      width: 1.25rem;
+
+      :deep(svg) {
+        width: 100%;
+        height: 100%;
+      }
+    }
+
+    &__message-wrapper {
+      margin-left: $spacing-3;
+      width: 0;
+      flex: 1;
+    }
+
+    &__message {
+      font-size: 0.875rem;
+      font-weight: 500;
+      overflow-wrap: break-word;
+
+      &--success {
+        color: color(success, text);
+      }
+
+      &--error {
+        color: color(error, text);
+      }
+    }
+
+    &__errors {
+      margin-top: $spacing-2;
+      font-size: 0.875rem;
+
+      &--success {
+        color: color(success, text);
+      }
+
+      &--error {
+        color: color(error, text);
+      }
+    }
+
+    &__errors-list {
+      list-style: disc;
+      padding-left: $spacing-5;
+
+      li {
+        margin-top: $spacing-1;
+
+        &:first-child {
+          margin-top: 0;
+        }
+      }
+    }
+
+    &__errors-field {
+      font-weight: 500;
+    }
+
+    &__close-wrapper {
+      margin-left: $spacing-4;
+      flex-shrink: 0;
+      display: flex;
+    }
+
+    &__close-button {
+      display: inline-flex;
+      border-radius: 0.375rem;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      align-items: center;
+      justify-content: center;
+
+      &:focus {
+        outline: none;
+      }
+
+      &--success {
+        color: color(success, icon);
+
+        &:hover {
+          color: color(success, hover);
+        }
+
+        &:focus {
+          ring: 2px solid color(success, ring);
+        }
+      }
+
+      &--error {
+        color: color(error, icon);
+
+        &:hover {
+          color: color(error, hover);
+        }
+
+        &:focus {
+          ring: 2px solid color(error, ring);
+        }
+      }
+    }
+
+    &__close-icon {
+      height: 1.25rem;
+      width: 1.25rem;
+
+      :deep(svg) {
+        width: 100%;
+        height: 100%;
+      }
+    }
   }
 
-  .animate-slide-out {
-    animation: slide-out 0.2s ease-in forwards;
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 </style>

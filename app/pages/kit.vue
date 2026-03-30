@@ -59,6 +59,28 @@
           Нажать для перехода
         </NavItem>
       </div>
+      <div>
+        <NotificationToast
+          v-if="notification.show"
+          :type="notification.type"
+          :message="notification.message"
+          :errors="notification.errors"
+          @close="notification.show = false"
+        />
+
+        <Button
+          style="margin-right: 8px"
+          variant="success"
+          @click="useNotificationToast('success')"
+          >Success</Button
+        >
+        <Button
+          variant="danger"
+          size="sm"
+          @click="useNotificationToast('error')"
+          >Error</Button
+        >
+      </div>
     </div>
   </div>
 </template>
@@ -70,4 +92,42 @@
   import SearchInput from '~/components/ui/molecules/SearchInput.vue'
   import Text from '~/components/ui/atoms/Text.vue'
   import NavItem from '~/components/ui/molecules/NavItem.vue'
+  import NotificationToast from '~/components/ui/molecules/NotificationToast.vue'
+  import Button from '~/components/ui/molecules/Button.vue'
+
+  import { ref } from 'vue'
+
+  // --- NotificationToast
+  interface Notification {
+    show: boolean
+    type: 'success' | 'error'
+    message: string
+    errors: Record<string, string> | null
+  }
+
+  const notification = ref<Notification>({
+    show: false,
+    type: 'success',
+    message: '',
+    errors: null
+  })
+
+  const useNotificationToast = (type: string) => {
+    notification.value.show = true
+
+    switch (type) {
+      case 'success':
+        notification.value.type = type
+        notification.value.message =
+          'Lorem ipsum dolor sit amet consectetur adipisicing elit. '
+        break
+
+      case 'error':
+        notification.value.type = type
+        notification.value.message =
+          'Lorem ipsum dolor sit amet consectetur adipisicing elit. '
+        break
+    }
+  }
+  // NotificationToast ---
 </script>
