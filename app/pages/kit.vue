@@ -31,6 +31,15 @@
     <div class="m-3">
       <SearchInput />
     </div>
+
+    <div class="m-3">
+      <Text tag="p" size="sm" :weight="'normal'" :color="'gray-600'"
+        >Lorem ipsum dolor sit amet consectetur adipisicing elit. Quidem at
+        ratione aliquam eveniet praesentium voluptatem nam error rem tenetur?
+        Doloribus veniam dolore labore consectetur at facere inventore porro
+        ipsam consequatur?</Text
+      >
+    </div>
   </div>
 </template>
 
@@ -39,4 +48,5 @@
   import Badge from '~/components/ui/atoms/Badge.vue'
   import Icon from '~/components/ui/atoms/Icon.vue'
   import SearchInput from '~/components/ui/atoms/SearchInput.vue'
+  import Text from '~/components/ui/atoms/Text.vue'
 </script>
