@@ -1,6 +1,6 @@
 <template>
   <svg
-    class="w-5 h-5"
+    class="icon"
     :class="[colorClass, sizeClass]"
     fill="none"
     stroke="currentColor"
@@ -62,6 +62,50 @@
 
   const path = computed(() => paths[props.name] || '')
 
-  const colorClass = computed(() => `text-${props.color}`)
-  const sizeClass = computed(() => `w-${props.size} h-${props.size}`)
+  const colorClass = computed(() => `icon-color-${props.color}`)
+  const sizeClass = computed(() => `icon-size-${props.size}`)
 </script>
+
+<style lang="scss" scoped>
+  .icon {
+    fill: none;
+    stroke: currentColor;
+
+    $sizes: (
+      '4': 1rem,
+      '5': 1.25rem,
+      '6': 1.5rem,
+      '8': 2rem,
+      '10': 2.5rem,
+      '12': 3rem
+    );
+
+    @each $size, $value in $sizes {
+      &.icon-size-#{$size} {
+        width: $value;
+        height: $value;
+      }
+    }
+
+    $colors: (
+      'gray-400': #9ca3af,
+      'gray-500': #6b7280,
+      'gray-600': #4b5563,
+      'blue-500': #3b82f6,
+      'blue-600': #2563eb,
+      'red-500': #ef4444,
+      'red-600': #dc2626,
+      'green-500': #10b981,
+      'green-600': #059669,
+      'yellow-500': #eab308,
+      'white': #ffffff,
+      'black': #000000
+    );
+
+    @each $color, $value in $colors {
+      &.icon-color-#{$color} {
+        color: $value;
+      }
+    }
+  }
+</style>
