@@ -1,15 +1,13 @@
 <template>
-  <div class="relative">
-    <div
-      class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
-    >
-      <Icon name="search" class="text-gray-400" />
+  <div class="search-field">
+    <div class="search-field__icon">
+      <Icon name="search" color="blue-600" size="6" />
     </div>
     <input
       :type="type"
       :placeholder="placeholder"
       :value="modelValue"
-      class="w-full rounded-lg bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none ring-1 ring-gray-300 focus:ring-2 focus:ring-indigo-500 transition-all"
+      class="search-field__input"
       @input="handleInput"
       @keyup.enter="handleEnter"
     />
@@ -46,3 +44,54 @@
     emit('search', target.value)
   }
 </script>
+
+<style scoped lang="scss">
+  @use 'sass:map';
+  @use 'sass:color';
+
+  $colors: (
+    text-primary: #111827,
+    text-placeholder: #9ca3af,
+    border-default: #d1d5db,
+    border-focus: #6366f1,
+    background: white
+  );
+
+  @function color($key) {
+    @return map.get($colors, $key);
+  }
+
+  .search-field {
+    position: relative;
+
+    &__icon {
+      position: absolute;
+      top: 3px;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      padding-left: 0.75rem;
+      pointer-events: none;
+    }
+
+    &__input {
+      width: 100%;
+      border-radius: 0.5rem;
+      background-color: color(background);
+      padding: 0.625rem 1rem 0.625rem 2.5rem;
+      color: color(text-primary);
+      outline: none;
+      transition: all 0.15s ease;
+      box-shadow: 0 0 0 1px color(border-default);
+
+      &::placeholder {
+        color: color(text-placeholder);
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 2px color(border-focus);
+      }
+    }
+  }
+</style>

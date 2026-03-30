@@ -28,6 +28,9 @@
       <Icon name="arrow-up" color="blue-600" size="6" />
       <Icon name="arrow-down" color="blue-600" size="8" />
     </div>
+    <div class="m-3">
+      <SearchInput />
+    </div>
   </div>
 </template>
 
@@ -35,4 +38,5 @@
   import Avatar from '~/components/ui/atoms/Avatar.vue'
   import Badge from '~/components/ui/atoms/Badge.vue'
   import Icon from '~/components/ui/atoms/Icon.vue'
+  import SearchInput from '~/components/ui/atoms/SearchInput.vue'
 </script>
