@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-  import Badge from '../atoms/Badge.vue'
+  import Badge from '~/components/ui/atoms/Badge.vue'
   import type { User } from '~/types/user'
   import { ROLE_LABELS, STATUS_LABELS, formatPhone } from '~/types/user'
 

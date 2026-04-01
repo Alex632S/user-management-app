@@ -1,10 +1,10 @@
 <template>
-  <div class="fixed inset-0 z-50 overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen px-4">
-      <div class="fixed inset-0 bg-black opacity-30" @click="$emit('close')" />
+  <div class="modal">
+    <div class="modal__container">
+      <div class="modal__overlay" @click="$emit('close')" />
 
-      <div class="relative bg-white rounded-lg max-w-md w-full p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">
+      <div class="modal__content">
+        <h3 class="modal__title">
           {{
             mode === 'create'
               ? 'Создать пользователя'
@@ -12,95 +12,70 @@
           }}
         </h3>
 
-        <form class="space-y-4" @submit.prevent="handleSubmit">
-          <!-- Имя -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Имя *</label>
+        <form class="modal__form" @submit.prevent="handleSubmit">
+          <div class="modal__field">
+            <label class="modal__label">Имя *</label>
             <input
               v-model="form.name"
               type="text"
               required
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              :class="{ 'border-red-300': errors.name }"
+              class="modal__input"
+              :class="{ 'modal__input--error': errors.name }"
             />
-            <p v-if="errors.name" class="mt-1 text-xs text-red-600">
+            <p v-if="errors.name" class="modal__error">
               {{ errors.name }}
             </p>
           </div>
 
-          <!-- Email -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Email *</label
-            >
+          <div class="modal__field">
+            <label class="modal__label">Email *</label>
             <input
               v-model="form.email"
               type="email"
               required
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              :class="{ 'border-red-300': errors.email }"
+              class="modal__input"
+              :class="{ 'modal__input--error': errors.email }"
             />
-            <p v-if="errors.email" class="mt-1 text-xs text-red-600">
+            <p v-if="errors.email" class="modal__error">
               {{ errors.email }}
             </p>
           </div>
 
-          <!-- Телефон -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Телефон *</label
-            >
+          <div class="modal__field">
+            <label class="modal__label">Телефон *</label>
             <input
               v-model="form.phone"
               type="tel"
               required
               placeholder="+1 (555) 123-4567"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              :class="{ 'border-red-300': errors.phone }"
+              class="modal__input"
+              :class="{ 'modal__input--error': errors.phone }"
             />
-            <p v-if="errors.phone" class="mt-1 text-xs text-red-600">
+            <p v-if="errors.phone" class="modal__error">
               {{ errors.phone }}
             </p>
           </div>
 
-          <!-- Роль -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Роль *</label
-            >
-            <select
-              v-model="form.role"
-              required
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            >
+          <div class="modal__field">
+            <label class="modal__label">Роль *</label>
+            <select v-model="form.role" required class="modal__select">
               <option value="admin">Администратор</option>
               <option value="editor">Редактор</option>
               <option value="viewer">Наблюдатель</option>
             </select>
           </div>
 
-          <!-- Статус -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Статус *</label
-            >
-            <select
-              v-model="form.status"
-              required
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            >
+          <div class="modal__field">
+            <label class="modal__label">Статус *</label>
+            <select v-model="form.status" required class="modal__select">
               <option value="active">Активен</option>
               <option value="blocked">Заблокирован</option>
             </select>
           </div>
 
-          <!-- Отдел (опционально) -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Отдел</label>
-            <select
-              v-model="form.department"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            >
+          <div class="modal__field">
+            <label class="modal__label">Отдел</label>
+            <select v-model="form.department" class="modal__select">
               <option value="">Не выбран</option>
               <option v-for="dept in DEPARTMENTS" :key="dept" :value="dept">
                 {{ dept }}
@@ -108,15 +83,9 @@
             </select>
           </div>
 
-          <!-- Локация (опционально) -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Локация</label
-            >
-            <select
-              v-model="form.location"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            >
+          <div class="modal__field">
+            <label class="modal__label">Локация</label>
+            <select v-model="form.location" class="modal__select">
               <option value="">Не выбрана</option>
               <option v-for="loc in LOCATIONS" :key="loc" :value="loc">
                 {{ loc }}
@@ -124,11 +93,10 @@
             </select>
           </div>
 
-          <!-- Кнопки -->
-          <div class="flex justify-end space-x-3 pt-4">
+          <div class="modal__actions">
             <button
               type="button"
-              class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              class="modal__button modal__button--cancel"
               @click="$emit('close')"
             >
               Отмена
@@ -136,7 +104,7 @@
             <button
               type="submit"
               :disabled="loading"
-              class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+              class="modal__button modal__button--submit"
             >
               {{ loading ? 'Создание...' : 'Создать пользователя' }}
             </button>
@@ -205,3 +173,147 @@
     emit('save', { ...form })
   }
 </script>
+
+<style lang="scss" scoped>
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    overflow-y: auto;
+
+    &__container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 0 1rem;
+    }
+
+    &__overlay {
+      position: fixed;
+      inset: 0;
+      background-color: black;
+      opacity: 0.3;
+      cursor: pointer;
+    }
+
+    &__content {
+      position: relative;
+      background-color: white;
+      border-radius: 0.5rem;
+      max-width: 28rem;
+      width: 100%;
+      padding: 1.5rem;
+    }
+
+    &__title {
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: rgb(17, 24, 39);
+      margin-bottom: 1rem;
+    }
+
+    &__form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    &__field {
+      display: flex;
+      flex-direction: column;
+    }
+
+    &__label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: rgb(55, 65, 81);
+      margin-bottom: 0.25rem;
+    }
+
+    &__input {
+      display: block;
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.375rem;
+      border: 1px solid rgb(209, 213, 219);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      font-size: 0.875rem;
+
+      &:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      }
+
+      &--error {
+        border-color: rgb(252, 165, 165);
+      }
+    }
+
+    &__select {
+      display: block;
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.375rem;
+      border: 1px solid rgb(209, 213, 219);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      font-size: 0.875rem;
+      background-color: white;
+
+      &:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      }
+    }
+
+    &__error {
+      margin-top: 0.25rem;
+      font-size: 0.75rem;
+      color: rgb(220, 38, 38);
+    }
+
+    &__actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      padding-top: 1rem;
+    }
+
+    &__button {
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      &--cancel {
+        border: 1px solid rgb(209, 213, 219);
+        background: transparent;
+        color: rgb(55, 65, 81);
+
+        &:hover {
+          background-color: rgb(249, 250, 251);
+        }
+      }
+
+      &--submit {
+        background-color: #4f46e5;
+        color: white;
+        border: none;
+
+        &:hover:not(:disabled) {
+          background-color: #4338ca;
+        }
+      }
+    }
+  }
+</style>

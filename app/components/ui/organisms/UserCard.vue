@@ -1,47 +1,39 @@
 <template>
-  <div
-    class="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-lg"
-  >
-    <div class="h-32 bg-gradient-to-r from-indigo-500 to-indigo-600 relative">
-      <div class="absolute -bottom-12 left-6">
-        <img
-          :src="user.avatar"
-          :alt="user.name"
-          class="h-24 w-24 rounded-full border-4 border-white bg-white"
-        />
+  <div class="user-card">
+    <div class="user-card__header">
+      <div class="user-card__avatar-wrapper">
+        <img :src="user.avatar" :alt="user.name" class="user-card__avatar" />
       </div>
     </div>
 
-    <!-- Контент карточки с редактируемыми полями -->
-    <div class="pt-16 pb-6 px-6">
-      <form class="space-y-4" @submit.prevent="saveChanges">
-        <!-- Верхняя часть с именем, ролью и статусом -->
-        <div class="flex justify-between items-start gap-4">
-          <div class="flex-1">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Имя <span class="text-red-500">*</span>
+    <div class="user-card__content">
+      <form class="user-card__form" @submit.prevent="saveChanges">
+        <div class="user-card__row">
+          <div class="user-card__field">
+            <label class="user-card__label">
+              Имя <span class="user-card__required">*</span>
             </label>
             <input
               v-model="editForm.name"
               type="text"
               required
-              class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              :class="{ 'border-red-300': errors.name }"
+              class="user-card__input"
+              :class="{ 'user-card__input--error': errors.name }"
               @input="checkChanges"
             />
-            <p v-if="errors.name" class="mt-1 text-xs text-red-600">
+            <p v-if="errors.name" class="user-card__error">
               {{ errors.name }}
             </p>
           </div>
 
-          <div class="w-40">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Роль <span class="text-red-500">*</span>
+          <div class="user-card__field user-card__field--small">
+            <label class="user-card__label">
+              Роль <span class="user-card__required">*</span>
             </label>
             <select
               v-model="editForm.role"
               required
-              class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              class="user-card__select"
               @change="checkChanges"
             >
               <option value="admin">Администратор</option>
@@ -51,16 +43,15 @@
           </div>
         </div>
 
-        <!-- Статус и email в одной строке -->
-        <div class="flex gap-4">
-          <div class="w-32">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Статус <span class="text-red-500">*</span>
+        <div class="user-card__row">
+          <div class="user-card__field user-card__field--status">
+            <label class="user-card__label">
+              Статус <span class="user-card__required">*</span>
             </label>
             <select
               v-model="editForm.status"
               required
-              class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              class="user-card__select"
               @change="checkChanges"
             >
               <option value="active">Активен</option>
@@ -68,53 +59,49 @@
             </select>
           </div>
 
-          <div class="flex-1">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Email <span class="text-red-500">*</span>
+          <div class="user-card__field">
+            <label class="user-card__label">
+              Email <span class="user-card__required">*</span>
             </label>
             <input
               v-model="editForm.email"
               type="email"
               required
-              class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              :class="{ 'border-red-300': errors.email }"
+              class="user-card__input"
+              :class="{ 'user-card__input--error': errors.email }"
               @input="checkChanges"
             />
-            <p v-if="errors.email" class="mt-1 text-xs text-red-600">
+            <p v-if="errors.email" class="user-card__error">
               {{ errors.email }}
             </p>
           </div>
         </div>
 
-        <!-- Телефон -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Телефон <span class="text-red-500">*</span>
+        <div class="user-card__field">
+          <label class="user-card__label">
+            Телефон <span class="user-card__required">*</span>
           </label>
           <input
             v-model="editForm.phone"
             type="tel"
             required
             placeholder="+1 (555) 123-4567"
-            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            :class="{ 'border-red-300': errors.phone }"
+            class="user-card__input"
+            :class="{ 'user-card__input--error': errors.phone }"
             @input="checkChanges"
           />
-          <p v-if="errors.phone" class="mt-1 text-xs text-red-600">
+          <p v-if="errors.phone" class="user-card__error">
             {{ errors.phone }}
           </p>
         </div>
 
-        <!-- Отдел и локация (для ExtendedUser) -->
         <template v-if="isExtendedUser(user)">
-          <div class="flex gap-4">
-            <div class="flex-1">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Отдел
-              </label>
+          <div class="user-card__row">
+            <div class="user-card__field">
+              <label class="user-card__label">Отдел</label>
               <select
                 v-model="editForm.department"
-                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                class="user-card__select"
                 @change="checkChanges"
               >
                 <option value="">Не выбран</option>
@@ -124,13 +111,11 @@
               </select>
             </div>
 
-            <div class="flex-1">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Локация
-              </label>
+            <div class="user-card__field">
+              <label class="user-card__label">Локация</label>
               <select
                 v-model="editForm.location"
-                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                class="user-card__select"
                 @change="checkChanges"
               >
                 <option value="">Не выбрана</option>
@@ -142,30 +127,28 @@
           </div>
         </template>
 
-        <!-- Дата регистрации и последнего входа (только для просмотра) -->
-        <div class="mt-4 pt-4 border-t border-gray-200">
-          <div class="grid grid-cols-2 gap-4 text-sm">
+        <div class="user-card__info">
+          <div class="user-card__info-grid">
             <div>
-              <span class="text-gray-500">Зарегистрирован:</span>
-              <span class="ml-2 text-gray-900">{{
+              <span class="user-card__info-label">Зарегистрирован:</span>
+              <span class="user-card__info-value">{{
                 formatDate(user.registeredAt)
               }}</span>
             </div>
             <div>
-              <span class="text-gray-500">Последний вход:</span>
-              <span class="ml-2 text-gray-900">{{
+              <span class="user-card__info-label">Последний вход:</span>
+              <span class="user-card__info-value">{{
                 formatDate(user.lastLogin)
               }}</span>
             </div>
           </div>
         </div>
 
-        <!-- Кнопки управления -->
-        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <div class="user-card__actions">
           <button
             v-if="hasChanges"
             type="button"
-            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            class="user-card__button user-card__button--cancel"
             @click="cancelChanges"
           >
             Отмена
@@ -173,25 +156,20 @@
           <button
             type="submit"
             :disabled="saving || !hasChanges || !isValid"
-            class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="user-card__button user-card__button--save"
           >
             {{ saving ? 'Сохранение...' : 'Сохранить изменения' }}
           </button>
           <button
             type="button"
-            class="px-4 py-2 border border-red-300 text-red-700 rounded-md text-sm font-medium hover:bg-red-50 transition-colors"
-            title="Удалить пользователя"
+            class="user-card__button user-card__button--delete"
             @click="$emit('delete', user)"
           >
             Удалить
           </button>
         </div>
 
-        <!-- Индикатор изменений -->
-        <div
-          v-if="hasChanges"
-          class="text-xs text-amber-600 bg-amber-50 p-2 rounded-md text-center"
-        >
+        <div v-if="hasChanges" class="user-card__changes-indicator">
           ⚡ Есть несохраненные изменения
         </div>
       </form>
@@ -217,7 +195,6 @@
   const originalData = ref<UserFormData | null>(null)
   const errors = reactive<Partial<Record<keyof UserFormData, string>>>({})
 
-  // Форма для редактирования
   const editForm = reactive<UserFormData>({
     name: props.user.name,
     email: props.user.email,
@@ -228,7 +205,6 @@
     location: isExtendedUser(props.user) ? props.user.location : ''
   })
 
-  // Сохраняем исходные данные при монтировании и при смене пользователя
   watch(
     () => props.user,
     (newUser) => {
@@ -242,7 +218,6 @@
 
       originalData.value = { ...editForm }
 
-      // Очищаем ошибки
       Object.keys(errors).forEach((key) => {
         delete errors[key as keyof typeof errors]
       })
@@ -250,7 +225,6 @@
     { immediate: true }
   )
 
-  // Проверка на наличие изменений
   const hasChanges = computed(() => {
     if (!originalData.value) return false
 
@@ -265,7 +239,6 @@
     )
   })
 
-  // Валидация формы
   const isValid = computed(() => {
     return (
       editForm.name.trim() !== '' &&
@@ -299,9 +272,7 @@
     return !errors.name && !errors.email && !errors.phone
   }
 
-  function checkChanges(): void {
-    // Просто триггерим computed свойство
-  }
+  function checkChanges(): void {}
 
   function cancelChanges(): void {
     if (originalData.value) {
@@ -327,3 +298,219 @@
     }
   }
 </script>
+
+<style lang="scss" scoped>
+  .user-card {
+    background-color: white;
+    border-radius: 0.75rem; // rounded-xl
+    overflow: hidden;
+    border: 1px solid rgb(229, 231, 235); // border-gray-200
+    box-shadow:
+      0 10px 15px -3px rgba(0, 0, 0, 0.1),
+      0 4px 6px -2px rgba(0, 0, 0, 0.05); // shadow-lg
+
+    &__header {
+      height: 8rem; // h-32
+      background: linear-gradient(
+        to right,
+        #6366f1,
+        #4f46e5
+      ); // from-indigo-500 to-indigo-600
+      position: relative;
+    }
+
+    &__avatar-wrapper {
+      position: absolute;
+      bottom: -3rem; // -bottom-12
+      left: 1.5rem; // left-6
+    }
+
+    &__avatar {
+      height: 6rem; // h-24
+      width: 6rem; // w-24
+      border-radius: 9999px; // rounded-full
+      border: 4px solid white;
+      background-color: white;
+      object-fit: cover;
+    }
+
+    &__content {
+      padding-top: 4rem; // pt-16
+      padding-bottom: 1.5rem; // pb-6
+      padding-left: 1.5rem; // px-6
+      padding-right: 1.5rem; // px-6
+    }
+
+    &__form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem; // space-y-4
+    }
+
+    &__row {
+      display: flex;
+      gap: 1rem; // gap-4
+
+      @media (max-width: 640px) {
+        flex-direction: column;
+      }
+    }
+
+    &__field {
+      flex: 1;
+
+      &--small {
+        width: 10rem; // w-40
+
+        @media (max-width: 640px) {
+          width: 100%;
+        }
+      }
+
+      &--status {
+        width: 8rem; // w-32
+
+        @media (max-width: 640px) {
+          width: 100%;
+        }
+      }
+    }
+
+    &__label {
+      display: block;
+      font-size: 0.875rem; // text-sm
+      font-weight: 500; // font-medium
+      color: rgb(55, 65, 81); // text-gray-700
+      margin-bottom: 0.25rem; // mb-1
+    }
+
+    &__required {
+      color: rgb(239, 68, 68); // text-red-500
+    }
+
+    &__input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.375rem; // rounded-md
+      border: 1px solid rgb(209, 213, 219); // border-gray-300
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); // shadow-sm
+      font-size: 0.875rem;
+
+      &:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      }
+
+      &--error {
+        border-color: rgb(252, 165, 165); // border-red-300
+      }
+    }
+
+    &__select {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.375rem;
+      border: 1px solid rgb(209, 213, 219);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      font-size: 0.875rem;
+      background-color: white;
+
+      &:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      }
+    }
+
+    &__error {
+      margin-top: 0.25rem;
+      font-size: 0.75rem;
+      color: rgb(220, 38, 38); // text-red-600
+    }
+
+    &__info {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgb(229, 231, 235);
+    }
+
+    &__info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      font-size: 0.875rem;
+    }
+
+    &__info-label {
+      color: rgb(107, 114, 128); // text-gray-500
+    }
+
+    &__info-value {
+      margin-left: 0.5rem;
+      color: rgb(17, 24, 39); // text-gray-900
+    }
+
+    &__actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem; // space-x-3
+      padding-top: 1rem;
+      border-top: 1px solid rgb(229, 231, 235);
+    }
+
+    &__button {
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      &--cancel {
+        border: 1px solid rgb(209, 213, 219);
+        background: transparent;
+        color: rgb(55, 65, 81);
+
+        &:hover {
+          background-color: rgb(249, 250, 251);
+        }
+      }
+
+      &--save {
+        background-color: #4f46e5;
+        color: white;
+        border: none;
+
+        &:hover:not(:disabled) {
+          background-color: #4338ca;
+        }
+      }
+
+      &--delete {
+        border: 1px solid rgb(252, 165, 165);
+        background: transparent;
+        color: rgb(220, 38, 38);
+
+        &:hover {
+          background-color: rgb(254, 242, 242);
+        }
+      }
+    }
+
+    &__changes-indicator {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background-color: rgb(255, 251, 235);
+      border-radius: 0.375rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: rgb(217, 119, 6);
+    }
+  }
+</style>

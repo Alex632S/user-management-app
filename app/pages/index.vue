@@ -158,7 +158,7 @@
   import type MobileSidebar from '~/components/ui/organisms/MobileSidebar.vue'
   import UserCard from '~/components/ui/organisms/UserCard.vue'
   import SearchInput from '~/components/ui/molecules/SearchInput.vue'
-  import UserListItem from '~/components/ui/molecules/UserListItem.vue'
+  import UserListItem from '~/components/ui/molecules/UserListItem/UserListItem.vue'
   import Icon from '~/components/ui/atoms/Icon.vue'
   import UserFormModal from '~/components/ui/organisms/UserFormModal.vue'
   import NotificationToast from '~/components/ui/molecules/NotificationToast.vue'

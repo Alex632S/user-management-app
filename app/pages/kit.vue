@@ -81,11 +81,70 @@
           >Error</Button
         >
       </div>
+      <div class="mt-3">
+        <!-- TODO -->
+        <!-- Удалить компонент. Сравнить с SearchInput.vue -->
+        <SearchBar />
+      </div>
+
+      <div style="height: 300px; border: thick solid #32a1ce; margin-top: 12px">
+        <Sidebar>
+          <template #logo>
+            <div>Logo</div>
+          </template>
+
+          <template #nav>
+            <ul>
+              <li>Home</li>
+              <li>About</li>
+            </ul>
+          </template>
+
+          <template #user>
+            <div>User: John</div>
+          </template>
+        </Sidebar>
+      </div>
+
+      <div style="height: 30px; border: thick solid #32a1ce; margin-top: 12px">
+        <SidebarDivider />
+      </div>
+
+      <div>
+        <SidebarLogo />
+      </div>
+    </div>
+
+    <div>
+      <SidebarNav />
+    </div>
+
+    <div style="border: thick solid #32a1ce; margin-top: 12px">
+      <PageHeader title="Настройки" current-page="Профиль" />
+    </div>
+
+    <div style="border: thick solid #32a1ce; margin-top: 12px">
+      <UserCard :user="user" @save="handleSave" @delete="handleDelete" />
+    </div>
+
+    <div style="border: thick solid #32a1ce; margin-top: 12px">
+      <UserFormModal
+        v-if="showModal"
+        mode="create"
+        @close="showModal = false"
+        @save="handleSave2"
+      />
+
+      <Button style="margin: 8px" variant="primary" @click="openModal2"
+        >Создать пользователя</Button
+      >
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+  import { ref } from 'vue'
+  import type { UserFormData, UserRole, UserStatus } from '~/types/user'
   import Avatar from '~/components/ui/atoms/Avatar.vue'
   import Badge from '~/components/ui/atoms/Badge.vue'
   import Icon from '~/components/ui/atoms/Icon.vue'
@@ -94,8 +153,14 @@
   import NavItem from '~/components/ui/molecules/NavItem.vue'
   import NotificationToast from '~/components/ui/molecules/NotificationToast.vue'
   import Button from '~/components/ui/molecules/Button.vue'
-
-  import { ref } from 'vue'
+  import SearchBar from '~/components/ui/molecules/SearchBar.vue'
+  import Sidebar from '~/components/ui/organisms/Sidebar/Sidebar.vue'
+  import SidebarDivider from '~/components/ui/organisms/Sidebar/SidebarDivider.vue'
+  import SidebarLogo from '~/components/ui/organisms/Sidebar/SidebarLogo.vue'
+  import SidebarNav from '~/components/ui/organisms/Sidebar/SidebarNav.vue'
+  import PageHeader from '~/components/ui/organisms/PageHeader.vue'
+  import UserCard from '~/components/ui/organisms/UserCard.vue'
+  import UserFormModal from '~/components/ui/organisms/UserFormModal.vue'
 
   // --- NotificationToast
   interface Notification {
@@ -130,4 +195,59 @@
     }
   }
   // NotificationToast ---
+
+  const searchQuery = ref('')
+
+  const handleSearch = (query: any) => {
+    searchQuery.value = query
+  }
+
+  // --- UserCard
+  const user = ref<
+    UserFormData & {
+      id: string
+      avatar: string
+      registeredAt: string
+      lastLogin: string
+    }
+  >({
+    id: '1',
+    name: 'Алексей Иванов',
+    email: 'alexey@example.com',
+    phone: '+7 (999) 123-45-67',
+    role: 'admin' as UserRole,
+    status: 'active' as UserStatus,
+    department: 'IT',
+    location: 'Москва',
+    avatar: 'https://via.placeholder.com/96',
+    registeredAt: '2023-01-15',
+    lastLogin: '2024-12-01'
+  })
+
+  const handleSave = (id: string, data: Partial<UserFormData>) => {
+    console.log('Сохранено:', id, data)
+    alert('Данные сохранены!')
+  }
+
+  const handleDelete = (user: any) => {
+    console.log('Удалить:', user)
+    if (confirm('Удалить пользователя?')) {
+      alert('Пользователь удален')
+    }
+  }
+  // UserCard ---
+
+  // --- UserModal
+  const showModal = ref(false)
+
+  const openModal2 = () => {
+    showModal.value = true
+  }
+
+  const handleSave2 = (userData: any) => {
+    console.log('Создан пользователь:', userData)
+    showModal.value = false
+    alert('Пользователь создан!')
+  }
+  // UserModal ---
 </script>

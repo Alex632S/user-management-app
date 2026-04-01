@@ -1,11 +1,9 @@
 <script setup lang="ts">
-  import { ref } from 'vue'
+  // import { ref } from 'vue'
 
-  const layout = ref()
+  // const layout = ref()
 </script>
 
 <template>
-  <NuxtLayout ref="layout">
-    <NuxtPage />
-  </NuxtLayout>
+  <NuxtPage />
 </template>

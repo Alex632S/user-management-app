@@ -1,4 +1,6 @@
 <template>
+  <!-- TODO -->
+  <!-- Удалить -->
   <NavItem :to="to" :icon="icon" :active="active">
     <slot />
   </NavItem>

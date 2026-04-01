@@ -1,5 +1,5 @@
 <template>
-  <div class="mb-8">
+  <div class="page-header">
     <Text tag="h1" size="xl" weight="semibold" color="gray-800">
       <slot>Project</slot>
     </Text>
@@ -9,3 +9,9 @@
 <script setup>
   import Text from '../../atoms/Text.vue'
 </script>
+
+<style lang="scss" scoped>
+  .page-header {
+    margin-bottom: 2rem;
+  }
+</style>

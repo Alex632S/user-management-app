@@ -278,7 +278,7 @@
         </div>
 
         <!-- Контейнер для основного контента с прокруткой -->
-        <div class="flex-1 overflow-hidden">
+        <div class="flex-1">
           <slot />
         </div>
       </main>

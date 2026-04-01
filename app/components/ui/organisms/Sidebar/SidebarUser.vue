@@ -1,4 +1,6 @@
 <template>
+  <!-- TODO -->
+  <!-- Переделать -->
   <a href="#" class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-50">
     <UserInfo :name="name" :email="email" :avatar="avatar" />
   </a>
