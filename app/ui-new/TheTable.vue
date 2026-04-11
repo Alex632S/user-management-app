@@ -16,16 +16,28 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(row, index) in dynamicData" :key="index">
+        <tr v-for="(row, rowIndex) in dynamicData" :key="rowIndex">
           <td>
             <input type="checkbox" class="checkbox" />
           </td>
           <td
-            v-for="(_value, colIndex) in Object.keys(row)"
+            v-for="(header, colIndex) in title"
             :key="colIndex"
             :class="`column-${colIndex + 1}`"
           >
-            <slot :name="`column-${_value}`" :table-data="row" />
+            <!-- 
+              Создаем имя слота на основе заголовка:
+              'Name' -> 'column-Name'
+              'First Name' -> 'column-First Name' (проблема!)
+            -->
+            <slot
+              :name="getSlotName(header)"
+              :table-data="row"
+              :value="getValueByHeader(row, header)"
+            >
+              <!-- Fallback: просто показываем значение -->
+              {{ getValueByHeader(row, header) }}
+            </slot>
           </td>
         </tr>
       </tbody>
@@ -34,7 +46,9 @@
 </template>
 
 <script setup>
-  defineProps({
+  import { defineProps } from 'vue'
+
+  const props = defineProps({
     title: {
       type: Array,
       default: () => []
@@ -44,6 +58,29 @@
       default: () => []
     }
   })
+
+  // Маппинг заголовков на поля в данных
+  const headerToFieldMap = {
+    Name: 'name',
+    'First Name': 'firstName',
+    'Last Name': 'lastName',
+    Email: 'email',
+    Group: 'group',
+    'Last Login': 'lastLogin'
+  }
+
+  // Получаем имя слота по заголовку (убираем пробелы)
+  const getSlotName = (header) => {
+    // 'First Name' -> 'column-FirstName'
+    const slotName = header.replace(/\s/g, '')
+    return `column-${slotName}`
+  }
+
+  // Получаем значение из строки данных по заголовку колонки
+  const getValueByHeader = (row, header) => {
+    const field = headerToFieldMap[header]
+    return row[field] || ''
+  }
 </script>
 
 <style scoped lang="scss">
