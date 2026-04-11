@@ -1,0 +1,983 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>⚡ Vue 3: Периодическая таблица композиции</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #42b883 0%, #35495e 100%);
+        min-height: 100vh;
+        padding: 20px;
+        color: #2c3e50;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.96);
+        border-radius: 28px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        padding: 30px;
+        backdrop-filter: blur(2px);
+      }
+
+      h1 {
+        text-align: center;
+        font-size: 2.6em;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, #42b883 0%, #35495e 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #5a6e7a;
+        margin-bottom: 30px;
+        font-size: 1.2em;
+        border-bottom: 1px solid #e2e8f0;
+        display: inline-block;
+        width: auto;
+        margin-left: auto;
+        margin-right: auto;
+        padding-bottom: 8px;
+      }
+
+      /* Легенда */
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        justify-content: center;
+        margin-bottom: 35px;
+        padding: 18px 20px;
+        background: #f1f5f9;
+        border-radius: 48px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 16px;
+        border-radius: 40px;
+        font-weight: 600;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .legend-color {
+        width: 22px;
+        height: 22px;
+        border-radius: 8px;
+      }
+
+      .reactivity {
+        background: #d9f0e6;
+        border: 2px solid #2c7a5c;
+      }
+      .lifecycle {
+        background: #ffe6d5;
+        border: 2px solid #c2410c;
+      }
+      .component {
+        background: #e0e7ff;
+        border: 2px solid #3730a3;
+      }
+      .advanced {
+        background: #fae8ff;
+        border: 2px solid #a21caf;
+      }
+      .watch {
+        background: #fff4e6;
+        border: 2px solid #b45309;
+      }
+      .utility {
+        background: #e6f2ff;
+        border: 2px solid #1e40af;
+      }
+
+      /* Сетка карточек */
+      .classes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 26px;
+        margin-bottom: 45px;
+      }
+
+      .class-card {
+        background: white;
+        border-radius: 24px;
+        padding: 20px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+        border-left: 6px solid #42b883;
+      }
+
+      .class-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 18px 30px rgba(0, 0, 0, 0.12);
+      }
+
+      .class-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+
+      .class-name {
+        font-size: 1.7em;
+        font-weight: 800;
+        font-family: 'Fira Code', 'Courier New', monospace;
+        background: #f8fafc;
+        padding: 0 8px;
+        border-radius: 14px;
+        letter-spacing: -0.5px;
+      }
+
+      .class-badge {
+        padding: 4px 14px;
+        border-radius: 40px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        background: #eef2ff;
+        color: #2d3e50;
+      }
+
+      .class-visualization {
+        background: #f8fafc;
+        border-radius: 20px;
+        padding: 18px;
+        margin: 15px 0;
+        font-family: 'Fira Code', monospace;
+        font-size: 0.9rem;
+        text-align: center;
+        border: 1px solid #e2edf2;
+      }
+
+      .class-description {
+        color: #334155;
+        margin: 12px 0;
+        line-height: 1.5;
+        font-size: 0.95rem;
+      }
+
+      .class-syntax {
+        background: #0f172a;
+        color: #e2e8f0;
+        border-radius: 18px;
+        padding: 14px;
+        font-family: 'Fira Code', monospace;
+        font-size: 0.85rem;
+        margin: 12px 0;
+        overflow-x: auto;
+      }
+
+      .class-props {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+
+      .prop-badge {
+        padding: 4px 12px;
+        border-radius: 28px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #f1f5f9;
+      }
+
+      .section-title {
+        font-size: 2rem;
+        margin: 48px 0 20px 0;
+        padding-bottom: 10px;
+        border-bottom: 3px solid #42b883;
+        color: #1e293b;
+        display: inline-block;
+      }
+
+      /* Ментальная карта */
+      .mindmap-container {
+        background: #ffffffdd;
+        backdrop-filter: blur(4px);
+        border-radius: 32px;
+        padding: 24px;
+        margin: 30px 0;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        border: 1px solid #d1dbe8;
+      }
+
+      .mindmap {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .mindmap-node {
+        background: linear-gradient(135deg, #42b883 0%, #2c5a48 100%);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 60px;
+        font-weight: bold;
+        font-size: 0.9rem;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Шпаргалка */
+      .cheatsheet {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 20px;
+        margin: 30px 0;
+      }
+
+      .cheatsheet-item {
+        background: linear-gradient(115deg, #35495e 0%, #2c3e50 100%);
+        color: white;
+        padding: 22px;
+        border-radius: 28px;
+        text-align: center;
+        transition: all 0.2s;
+      }
+
+      .cheatsheet-item h3 {
+        margin-bottom: 12px;
+        font-size: 1.3rem;
+      }
+
+      .cheatsheet-item code {
+        background: rgba(255, 255, 240, 0.2);
+        padding: 5px 12px;
+        border-radius: 24px;
+        font-size: 1.1rem;
+      }
+
+      /* Таблица всех инструментов */
+      .members-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 30px 0;
+        background: white;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+      }
+
+      .members-table th {
+        background: #35495e;
+        color: white;
+        padding: 16px;
+        text-align: left;
+        font-weight: 600;
+      }
+
+      .members-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #e9eef3;
+        vertical-align: top;
+      }
+
+      .members-table tr:hover {
+        background: #f9fbfd;
+      }
+
+      .category {
+        font-weight: 800;
+        color: #2c7a5c;
+      }
+
+      footer {
+        text-align: center;
+        margin-top: 50px;
+        padding: 24px;
+        color: #5c6f87;
+        border-top: 1px solid #dce5ec;
+        font-size: 0.9rem;
+      }
+
+      .hook-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .hook-tag {
+        background: #ecfdf5;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-family: monospace;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #0b3b2f;
+      }
+
+      @media (max-width: 720px) {
+        .container {
+          padding: 18px;
+        }
+        .class-name {
+          font-size: 1.3rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>⚡ Vue 3: Периодическая таблица композиции</h1>
+      <div class="subtitle">
+        Composition API • Хуки жизни • Реактивность • Утилиты • Гайд по всем
+        инструментам
+      </div>
+
+      <!-- Легенда -->
+      <div class="legend">
+        <div class="legend-item">
+          <span class="legend-color reactivity"></span> 🌿 Реактивность
+        </div>
+        <div class="legend-item">
+          <span class="legend-color lifecycle"></span> 🔄 Жизненные циклы
+        </div>
+        <div class="legend-item">
+          <span class="legend-color component"></span> 🧩 Компонентные хуки
+        </div>
+        <div class="legend-item">
+          <span class="legend-color watch"></span> 👁️ Слежение (watch/effect)
+        </div>
+        <div class="legend-item">
+          <span class="legend-color advanced"></span> ⚙️ Продвинутые / DI
+        </div>
+        <div class="legend-item">
+          <span class="legend-color utility"></span> 🛠️ Утилиты / Интроспекция
+        </div>
+      </div>
+
+      <!-- Ментальная карта Vue Composition -->
+      <div class="mindmap-container">
+        <h2>🧠 Ментальная карта Composition API</h2>
+        <div class="mindmap">
+          <div class="mindmap-node">ref()</div>
+          <div class="mindmap-node">reactive()</div>
+          <div class="mindmap-node">computed()</div>
+          <div class="mindmap-node">watch / watchEffect</div>
+          <div class="mindmap-node">onMounted</div>
+          <div class="mindmap-node">provide/inject</div>
+          <div class="mindmap-node">defineProps/Emits</div>
+          <div class="mindmap-node">useSlots()</div>
+        </div>
+      </div>
+
+      <!-- Шпаргалка: когда что брать -->
+      <h2 class="section-title">🎯 Шпаргалка: когда что использовать</h2>
+      <div class="cheatsheet">
+        <div class="cheatsheet-item">
+          <h3>Реактивная переменная</h3>
+          <code>ref(value)</code>
+          <p>.value в JS, автоанврап в шаблоне</p>
+        </div>
+        <div class="cheatsheet-item">
+          <h3>Реактивный объект</h3>
+          <code>reactive({})</code>
+          <p>для сложных структур, без .value</p>
+        </div>
+        <div class="cheatsheet-item">
+          <h3>Вычисляемые данные</h3>
+          <code>computed(() => ...)</code>
+          <p>кеширование, зависимые обновления</p>
+        </div>
+        <div class="cheatsheet-item">
+          <h3>Побочные эффекты</h3>
+          <code>watchEffect()</code>
+          <p>автосбор зависимостей</p>
+        </div>
+        <div class="cheatsheet-item">
+          <h3>Жизнь компонента</h3>
+          <code>onMounted / onUnmounted</code>
+          <p>DOM готов, очистка событий</p>
+        </div>
+        <div class="cheatsheet-item">
+          <h3>DI / Внедрение</h3>
+          <code>provide / inject</code>
+          <p>сквозная передача данных</p>
+        </div>
+      </div>
+
+      <!-- ГРУППА I: Реактивность (ref, reactive и др.) -->
+      <h2 class="section-title">ГРУППА I: Реактивность — сердце Vue 🌿</h2>
+      <div class="classes-grid">
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">ref / shallowRef</span
+            ><span class="class-badge">реактивность</span>
+          </div>
+          <div class="class-visualization">
+            <div style="background: #eef2ff; border-radius: 16px; padding: 8px">
+              const count = ref(0) → { value: 0 }<br />
+              count.value++ → обновляет DOM
+            </div>
+          </div>
+          <div class="class-description">
+            Базовая реактивная ссылка. Работает с примитивами и объектами.
+            shallowRef — только поверхностно.
+          </div>
+          <div class="class-syntax">
+            import { ref, shallowRef } from 'vue'<br />const age = ref(25)<br />const
+            shallow = shallowRef({ deep: { nested: true } })
+          </div>
+          <div class="class-props">
+            <span class="prop-badge">.value в JS</span
+            ><span class="prop-badge">глубокий трекинг</span>
+          </div>
+        </div>
+
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">reactive / readonly</span
+            ><span class="class-badge">реактивность</span>
+          </div>
+          <div class="class-visualization">
+            reactive({ name: 'Vue', version: 3 }) → Proxy
+          </div>
+          <div class="class-description">
+            Глубокий реактивный объект (Proxy). Не требует .value, но нельзя
+            перезаписать целиком.
+          </div>
+          <div class="class-syntax">
+            const state = reactive({ user: { name: 'Elena' } })<br />const
+            frozen = readonly(state)
+          </div>
+          <div class="class-props">
+            <span class="prop-badge">прямой доступ</span
+            ><span class="prop-badge">readonly защита</span>
+          </div>
+        </div>
+
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">computed</span
+            ><span class="class-badge">вычисляемое</span>
+          </div>
+          <div class="class-visualization">
+            computed(() => firstName.value + ' ' + lastName.value)
+          </div>
+          <div class="class-description">
+            Кешируемое значение, пересчитывается только при изменении
+            зависимостей.
+          </div>
+          <div class="class-syntax">
+            const fullName = computed(() => user.first + ' ' + user.last)<br />fullName.value
+            // геттер
+          </div>
+          <div class="class-props">
+            <span class="prop-badge">ленивый</span
+            ><span class="prop-badge">кеширование</span>
+          </div>
+        </div>
+
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">toRef / toRefs</span
+            ><span class="class-badge">реакт. утилиты</span>
+          </div>
+          <div class="class-visualization">
+            toRef(reactiveObj, 'key') → сохраняет связь
+          </div>
+          <div class="class-description">
+            Создаёт ref из свойства реактивного объекта, сохраняя реактивность.
+          </div>
+          <div class="class-syntax">
+            const state = reactive({ a:1, b:2 })<br />const { a } =
+            toRefs(state)
+          </div>
+          <div class="class-props">
+            <span class="prop-badge">деструктуризация без потери</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ГРУППА II: Жизненные циклы (lifecycle hooks) -->
+      <h2 class="section-title">ГРУППА II: Жизненные циклы компонента 🔄</h2>
+      <div class="classes-grid">
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">onMounted / onBeforeMount</span
+            ><span class="class-badge">монтирование</span>
+          </div>
+          <div class="class-description">
+            onMounted — DOM готов, доступны ref элементов. onBeforeMount — перед
+            первой отрисовкой.
+          </div>
+          <div class="class-syntax">
+            onMounted(() => { console.log('Компонент в DOM') })
+          </div>
+          <div class="hook-grid">
+            <span class="hook-tag">onBeforeMount</span
+            ><span class="hook-tag">onMounted</span>
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">onUpdate / onBeforeUpdate</span
+            ><span class="class-badge">обновление</span>
+          </div>
+          <div class="class-description">
+            Срабатывают при ререндере компонента (реактивные изменения).
+          </div>
+          <div class="class-syntax">
+            onBeforeUpdate(() => console.log('скоро патч'))<br />onUpdated(() =>
+            console.log('DOM обновлён'))
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">onUnmounted / onBeforeUnmount</span
+            ><span class="class-badge">размонтирование</span>
+          </div>
+          <div class="class-description">
+            Очистка таймеров, слушателей, отписка от событий.
+          </div>
+          <div class="class-syntax">
+            onUnmounted(() => clearInterval(intervalId))
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">onActivated / onDeactivated</span
+            ><span class="class-badge">KeepAlive</span>
+          </div>
+          <div class="class-description">
+            Для компонентов внутри &lt;KeepAlive&gt; — активация/деактивация
+            кеша.
+          </div>
+          <div class="class-syntax">
+            onActivated(() => fetchData())<br />onDeactivated(() =>
+            saveScroll())
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">onErrorCaptured</span
+            ><span class="class-badge">ошибки потомков</span>
+          </div>
+          <div class="class-description">
+            Перехват ошибок в дочерних компонентах, можно предотвратить
+            всплытие.
+          </div>
+          <div class="class-syntax">
+            onErrorCaptured((err, instance, info) => { logError(err); return
+            false })
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">onRenderTracked/Triggered</span
+            ><span class="class-badge">devtools</span>
+          </div>
+          <div class="class-description">
+            Отладка: когда зависимость отслежена или вызвала ререндер (только
+            dev).
+          </div>
+        </div>
+      </div>
+
+      <!-- ГРУППА III: Слежение (watch, watchEffect, и вариации) -->
+      <h2 class="section-title">ГРУППА III: Слежение за изменениями 👁️</h2>
+      <div class="classes-grid">
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">watch</span
+            ><span class="class-badge">источник → callback</span>
+          </div>
+          <div class="class-visualization">
+            watch(source, (newVal, oldVal) => {...}, { deep, immediate })
+          </div>
+          <div class="class-description">
+            Ленивый, следит за конкретными источниками, даёт доступ к старому
+            значению.
+          </div>
+          <div class="class-syntax">
+            watch(() => state.count, (val, old) => console.log(val, old))
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">watchEffect</span
+            ><span class="class-badge">автосбор зависимостей</span>
+          </div>
+          <div class="class-description">
+            Запускается немедленно, автоматически отслеживает все реактивные
+            зависимости внутри.
+          </div>
+          <div class="class-syntax">
+            watchEffect(() => { console.log(todoCount.value, user.name) })
+          </div>
+          <div class="class-props">
+            <span class="prop-badge">cleanup функция</span>
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">watchPostEffect / watchSyncEffect</span
+            ><span class="class-badge">тайминги</span>
+          </div>
+          <div class="class-description">
+            watchPostEffect — после DOM-обновления. watchSyncEffect — синхронно
+            до обновления.
+          </div>
+          <div class="class-syntax">watchPostEffect(() => measureDom())</div>
+        </div>
+      </div>
+
+      <!-- ГРУППА IV: Компонентные макросы и контекст (defineProps, emits, slots) -->
+      <h2 class="section-title">
+        ГРУППА IV: Компонентные инструменты (макросы) 🧩
+      </h2>
+      <div class="classes-grid">
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">defineProps / defineEmits</span
+            ><span class="class-badge">script setup</span>
+          </div>
+          <div class="class-description">
+            Типизированные props и события, доступны без импорта в &lt;script
+            setup&gt;.
+          </div>
+          <div class="class-syntax">
+            const props = defineProps<{ title: string }>()<br />const emit =
+            defineEmits<{ (e: 'close'): void }>()
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">defineExpose / defineOptions</span
+            ><span class="class-badge">компонентные</span>
+          </div>
+          <div class="class-description">
+            defineExpose — открыть методы/свойства для родительских ref.
+            defineOptions — задать name, inheritAttrs.
+          </div>
+          <div class="class-syntax">defineExpose({ resetForm, validate })</div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">useSlots / useAttrs</span
+            ><span class="class-badge">контекст</span>
+          </div>
+          <div class="class-description">
+            useSlots() — доступ к слотам, useAttrs() — все унаследованные
+            атрибуты.
+          </div>
+          <div class="class-syntax">
+            const slots = useSlots(); slots.default?.()
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">defineModel (Vue 3.4+)</span
+            ><span class="class-badge">v-model упрощение</span>
+          </div>
+          <div class="class-description">
+            Двустороннее связывание без лишнего кода.
+          </div>
+          <div class="class-syntax">
+            const modelValue = defineModel()<br />modelValue.value = 'new'
+          </div>
+        </div>
+      </div>
+
+      <!-- ГРУППА V: provide / inject и продвинутые утилиты -->
+      <h2 class="section-title">
+        ГРУППА V: Dependency injection и продвинутые утилиты ⚙️
+      </h2>
+      <div class="classes-grid">
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">provide / inject</span
+            ><span class="class-badge">DI</span>
+          </div>
+          <div class="class-description">
+            Передача данных через иерархию (независимо от уровня вложенности).
+          </div>
+          <div class="class-syntax">
+            provide('theme', 'dark')<br />const theme = inject('theme', 'light')
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">effectScope / getCurrentScope</span
+            ><span class="class-badge">группировка эффектов</span>
+          </div>
+          <div class="class-description">
+            Объединяет эффекты (watch, computed) для массовой очистки.
+          </div>
+          <div class="class-syntax">
+            const scope = effectScope(); scope.run(() => { watch(...) });
+            scope.stop()
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">customRef / triggerRef</span
+            ><span class="class-badge">тонкий контроль</span>
+          </div>
+          <div class="class-description">
+            customRef — собственная логика трекинга (debounce, throttle).
+            triggerRef — принудительное обновление shallowRef.
+          </div>
+          <div class="class-syntax">
+            customRef((track, trigger) => { get() { track(); return value },
+            set(v) { value=v; trigger() }})
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">markRaw / toRaw</span
+            ><span class="class-badge">исключения реактивности</span>
+          </div>
+          <div class="class-description">
+            markRaw — запретить реактивность объекта. toRaw — получить оригинал
+            из прокси.
+          </div>
+          <div class="class-syntax">
+            const obj = markRaw({ noReactive: true })<br />const raw =
+            toRaw(reactiveObj)
+          </div>
+        </div>
+      </div>
+
+      <!-- ГРУППА VI: Встроенные компоненты и глобальные API -->
+      <h2 class="section-title">
+        ГРУППА VI: Встроенные компоненты + глобальные инструменты 🧩
+      </h2>
+      <div class="classes-grid">
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">&lt;Teleport&gt;</span
+            ><span class="class-badge">порталы</span>
+          </div>
+          <div class="class-description">
+            Рендер в другой DOM-узел (модалки, тосты).
+          </div>
+          <div class="class-syntax">
+            &lt;Teleport to="body"&gt;&lt;Modal /&gt;&lt;/Teleport&gt;
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">&lt;Transition&gt; / KeepAlive</span
+            ><span class="class-badge">анимация + кеш</span>
+          </div>
+          <div class="class-description">
+            Transition — анимация появления/исчезновения. KeepAlive —
+            кеширование компонентов.
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">nextTick / version</span
+            ><span class="class-badge">утилиты рантайма</span>
+          </div>
+          <div class="class-description">
+            nextTick — дождаться обновления DOM. version — текущая версия Vue.
+          </div>
+          <div class="class-syntax">
+            await nextTick(); console.log('DOM обновлён')
+          </div>
+        </div>
+        <div class="class-card">
+          <div class="class-header">
+            <span class="class-name">app.use / app.component</span
+            ><span class="class-badge">глобальная регистрация</span>
+          </div>
+          <div class="class-description">
+            Плагины, глобальные компоненты и директивы.
+          </div>
+        </div>
+      </div>
+
+      <!-- Полная таблица всех API -->
+      <h2 class="section-title">
+        📋 Полная таблица хуков и инструментов Vue 3
+      </h2>
+      <table class="members-table">
+        <thead>
+          <tr>
+            <th>Категория</th>
+            <th>API / Хук</th>
+            <th>Описание</th>
+            <th>Пример</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="category">🌿 Реактивность</td>
+            <td>ref, reactive, computed, readonly</td>
+            <td>Создание реактивных данных</td>
+            <td>const count = ref(0)</td>
+          </tr>
+          <tr>
+            <td class="category">🔄 Жизненный цикл</td>
+            <td>
+              onMounted, onUpdated, onUnmounted, onBeforeMount, onBeforeUpdate,
+              onBeforeUnmount, onErrorCaptured, onRenderTracked, onActivated,
+              onDeactivated
+            </td>
+            <td>Хуки от монтирования до размонтирования</td>
+            <td>onMounted(()=>{})</td>
+          </tr>
+          <tr>
+            <td class="category">👁️ Слежение</td>
+            <td>watch, watchEffect, watchPostEffect, watchSyncEffect</td>
+            <td>Реакция на изменения</td>
+            <td>watch(source, cb)</td>
+          </tr>
+          <tr>
+            <td class="category">🧩 Компонентные</td>
+            <td>
+              defineProps, defineEmits, defineExpose, defineOptions,
+              defineModel, useSlots, useAttrs, getCurrentInstance
+            </td>
+            <td>Макросы и контекст</td>
+            <td>defineProps<{msg:string}>()</td>
+          </tr>
+          <tr>
+            <td class="category">⚙️ Продвинутые</td>
+            <td>
+              provide, inject, effectScope, customRef, markRaw, toRaw,
+              shallowRef, triggerRef, onScopeDispose
+            </td>
+            <td>DI, группы эффектов, низкоуровневая реактивность</td>
+            <td>provide('key', val)</td>
+          </tr>
+          <tr>
+            <td class="category">🛠️ Утилиты</td>
+            <td>
+              isRef, unref, toRef, toRefs, isReactive, isProxy, nextTick,
+              version, hasInjectionContext
+            </td>
+            <td>Проверки и вспомогательные методы</td>
+            <td>if(isRef(val)) {...}</td>
+          </tr>
+          <tr>
+            <td class="category">🏗️ Встроенные компоненты</td>
+            <td>
+              Teleport, Transition, TransitionGroup, KeepAlive, Suspense
+              (экспериментальный)
+            </td>
+            <td>Порталы, анимации, кеширование</td>
+            <td>&lt;Teleport to="#modal"/&gt;</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Прототипная цепочка реактивности (образно) -->
+      <h2 class="section-title">🔗 Как работает реактивность под капотом</h2>
+      <div
+        style="
+          background: #f1f5f9;
+          border-radius: 24px;
+          padding: 24px;
+          margin: 20px 0;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+          "
+        >
+          <div class="proto-box" style="background: #2c7a5c">ref(0)</div>
+          <span class="arrow">→</span>
+          <div class="proto-box" style="background: #4f46e5">
+            Effect (watchEffect)
+          </div>
+          <span class="arrow">→</span>
+          <div class="proto-box" style="background: #c2410c">
+            track / trigger
+          </div>
+          <span class="arrow">→</span>
+          <div class="proto-box" style="background: #2c3e50">
+            Обновление DOM
+          </div>
+        </div>
+        <div class="class-syntax" style="margin-top: 18px; text-align: center">
+          📌 Внутри: Proxy для reactive, getter/setter для ref + WeakMap
+          зависимостей
+        </div>
+      </div>
+
+      <!-- Полный пример компонента на Composition API -->
+      <h2 class="section-title">
+        💻 Полный пример компонента (Vue 3 + script setup)
+      </h2>
+      <div class="class-syntax" style="font-size: 0.9rem">
+        <pre>
+&lt;script setup&gt;
+import { ref, reactive, computed, onMounted, watchEffect, defineProps, defineEmits } from 'vue'
+
+const props = defineProps({ initialCount: Number })
+const emit = defineEmits(['update'])
+
+const count = ref(props.initialCount ?? 0)
+const double = computed(() => count.value * 2)
+
+const state = reactive({ history: [] })
+
+function increment() {
+  count.value++
+  state.history.push(`+1 → ${count.value}`)
+  emit('update', count.value)
+}
+
+watchEffect(() => {
+  console.log(`Счётчик стал: ${count.value}`)
+})
+
+onMounted(() => {
+  console.log('Компонент смонтирован')
+})
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;div&gt;
+    &lt;button @click="increment"&gt;{{ count }} (x2 = {{ double }})&lt;/button&gt;
+    &lt;ul&gt;&lt;li v-for="log in state.history" :key="log"&gt;{{ log }}&lt;/li&gt;&lt;/ul&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+        </pre>
+      </div>
+
+      <footer>
+        <p>
+          ⚡ Vue 3 Composition API • Реактивность • Жизненные циклы • Утилиты
+        </p>
+        <p>
+          🌿 ref, reactive • 🔄 onMounted, onUnmounted • 👁️ watchEffect • 🧩
+          defineProps, defineModel
+        </p>
+        <p style="font-size: 0.8rem">
+          Все хуки и инструменты Vue 3 в одной таблице — от основ до продвинутых
+          сценариев
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>

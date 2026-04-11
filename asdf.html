@@ -1,0 +1,1127 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Cerberus Enterprise | Admin Console</title>
+    <style>
+      /* -------------------- RESET & GLOBAL -------------------- */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        /* color system */
+        --color-primary: #0f6c9f;
+        --color-primary-dark: #0a5480;
+        --color-primary-light: #2a8fc9;
+        --color-background: #f1f5f9;
+        --color-sidebar-bg: #0f1724;
+        --color-sidebar-hover: #1e2a3a;
+        --color-sidebar-active: #1e3a5f;
+        --color-text-primary: #0f172a;
+        --color-text-secondary: #475569;
+        --color-text-sidebar: #e2e8f0;
+        --color-border: #e2e8f0;
+        --color-border-dark: #cbd5e1;
+        --color-success: #10b981;
+        --color-warning: #f59e0b;
+        --color-error: #ef4444;
+        --color-info: #3b82f6;
+
+        /* shadows */
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        --shadow-sidebar: 2px 0 8px rgba(0, 0, 0, 0.2);
+
+        /* border radius */
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+
+        /* transitions */
+        --transition-fast: 150ms ease;
+        --transition-base: 250ms ease;
+
+        /* dimensions */
+        --sidebar-width: 280px;
+        --header-height: 64px;
+      }
+
+      body {
+        font-family:
+          'Inter',
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        background: var(--color-background);
+        color: var(--color-text-primary);
+        font-size: 14px;
+        line-height: 1.5;
+        overflow: hidden;
+      }
+
+      /* scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #e2e8f0;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #94a3b8;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #5b6e8c;
+      }
+
+      /* layout */
+      .app {
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* SIDEBAR */
+      .sidebar {
+        width: var(--sidebar-width);
+        background: var(--color-sidebar-bg);
+        color: var(--color-text-sidebar);
+        display: flex;
+        flex-direction: column;
+        transition: width var(--transition-base);
+        box-shadow: var(--shadow-sidebar);
+        z-index: 20;
+        overflow-y: auto;
+        overflow-x: hidden;
+        flex-shrink: 0;
+      }
+
+      /* brand */
+      .sidebar-brand {
+        padding: 24px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        margin-bottom: 20px;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+      .logo-icon {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, #2a8fc9, #0f6c9f);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 18px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      }
+      .logo-text {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        background: linear-gradient(135deg, #fff, #9ac7e7);
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+      .version {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.45);
+        letter-spacing: 0.3px;
+        margin-left: 44px;
+      }
+
+      /* navigation */
+      .nav-menu {
+        flex: 1;
+        padding: 0 12px;
+      }
+      .nav-item {
+        margin-bottom: 2px;
+      }
+      .nav-link,
+      .nav-trigger {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 10px 12px;
+        border: none;
+        background: transparent;
+        color: var(--color-text-sidebar);
+        font-size: 14px;
+        font-weight: 500;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        text-decoration: none;
+        gap: 12px;
+      }
+      .nav-link:hover,
+      .nav-trigger:hover {
+        background: var(--color-sidebar-hover);
+      }
+      .nav-link.active {
+        background: var(--color-sidebar-active);
+        color: white;
+        position: relative;
+      }
+      .nav-link.active::before {
+        content: '';
+        position: absolute;
+        left: -12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 24px;
+        background: var(--color-primary-light);
+        border-radius: 0 3px 3px 0;
+      }
+      .nav-icon {
+        font-size: 18px;
+        width: 24px;
+        text-align: center;
+      }
+      .nav-label {
+        flex: 1;
+        text-align: left;
+      }
+      .chevron {
+        margin-left: auto;
+        font-size: 12px;
+        transition: transform var(--transition-fast);
+      }
+      .chevron.open {
+        transform: rotate(90deg);
+      }
+      .submenu {
+        padding-left: 36px;
+        margin-top: 4px;
+        overflow: hidden;
+        transition: max-height 0.2s ease;
+      }
+      .submenu .nav-link {
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+      .badge-nav {
+        background: var(--color-primary);
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 20px;
+        margin-left: 8px;
+      }
+
+      /* MAIN CONTAINER */
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* HEADER */
+      .header {
+        height: var(--header-height);
+        background: white;
+        border-bottom: 1px solid var(--color-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        flex-shrink: 0;
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .menu-toggle {
+        background: transparent;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-sm);
+        transition: background var(--transition-fast);
+      }
+      .menu-toggle:hover {
+        background: var(--color-background);
+      }
+      .breadcrumbs {
+        font-size: 13px;
+        color: var(--color-text-secondary);
+      }
+      .breadcrumbs span:last-child {
+        color: var(--color-text-primary);
+        font-weight: 500;
+      }
+      .user-menu {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .avatar {
+        width: 36px;
+        height: 36px;
+        background: var(--color-primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+      }
+
+      /* CONTENT AREA */
+      .content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px;
+      }
+
+      /* page header */
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+      .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+      }
+      .btn-primary {
+        background: var(--color-primary);
+        color: white;
+        border: none;
+        padding: 8px 18px;
+        border-radius: var(--radius-md);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: background var(--transition-fast);
+      }
+      .btn-primary:hover {
+        background: var(--color-primary-dark);
+      }
+
+      /* filters bar */
+      .filters-bar {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+      .search-box {
+        position: relative;
+        width: 280px;
+      }
+      .search-box input {
+        width: 100%;
+        padding: 8px 12px 8px 36px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        font-size: 14px;
+      }
+      .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+      }
+      .select {
+        padding: 8px 32px 8px 12px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: white;
+        font-size: 14px;
+      }
+      .btn-secondary {
+        background: white;
+        border: 1px solid var(--color-border);
+        padding: 8px 16px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+
+      /* table */
+      .table-wrapper {
+        background: white;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: auto;
+      }
+      .user-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+      }
+      .user-table th,
+      .user-table td {
+        padding: 14px 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--color-border);
+      }
+      .user-table th {
+        background: #f8fafc;
+        font-weight: 600;
+        color: var(--color-text-secondary);
+      }
+      .user-table tbody tr {
+        cursor: pointer;
+        transition: background var(--transition-fast);
+      }
+      .user-table tbody tr:hover {
+        background: #f8fafc;
+      }
+      .user-table tr.selected-row {
+        background: rgba(15, 108, 159, 0.05);
+      }
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .badge-2fa {
+        background: var(--color-success);
+        color: white;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 20px;
+      }
+      .pagination {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 20px;
+        gap: 8px;
+      }
+      .page-btn {
+        padding: 6px 12px;
+        border: 1px solid var(--color-border);
+        background: white;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+      }
+
+      /* RIGHT SIDEPANEL (drawer) */
+      .drawer {
+        position: fixed;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 520px;
+        background: white;
+        box-shadow: var(--shadow-lg);
+        z-index: 200;
+        display: flex;
+        flex-direction: column;
+        transform: translateX(100%);
+        transition: transform var(--transition-base);
+      }
+      .drawer.open {
+        transform: translateX(0);
+      }
+      .drawer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--color-border);
+      }
+      .drawer-title {
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .drawer-close {
+        background: transparent;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+      }
+      .drawer-tabs {
+        display: flex;
+        padding: 0 24px;
+        border-bottom: 1px solid var(--color-border);
+        gap: 24px;
+      }
+      .drawer-tab {
+        padding: 12px 0;
+        background: transparent;
+        border: none;
+        font-weight: 500;
+        cursor: pointer;
+        color: var(--color-text-secondary);
+      }
+      .drawer-tab.active {
+        color: var(--color-primary);
+        border-bottom: 2px solid var(--color-primary);
+      }
+      .drawer-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      .form-label {
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 6px;
+        display: block;
+        color: var(--color-text-secondary);
+      }
+      .form-input,
+      .form-select,
+      .form-textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        font-size: 14px;
+      }
+      .form-input:disabled {
+        background: #f1f5f9;
+      }
+      .form-row {
+        display: flex;
+        gap: 16px;
+      }
+      .info-block {
+        background: #f8fafc;
+        border-radius: var(--radius-md);
+        padding: 16px;
+        margin: 20px 0;
+      }
+      .drawer-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--color-border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+      }
+      .btn-danger {
+        background: white;
+        border: 1px solid var(--color-error);
+        color: var(--color-error);
+        padding: 8px 16px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+      }
+
+      /* modal */
+      .modal-mask {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 300;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        visibility: hidden;
+        opacity: 0;
+        transition: all 0.2s;
+      }
+      .modal-mask.active {
+        visibility: visible;
+        opacity: 1;
+      }
+      .modal-container {
+        background: white;
+        width: 480px;
+        border-radius: var(--radius-lg);
+        padding: 24px;
+      }
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: #1e293b;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 40px;
+        font-size: 13px;
+        z-index: 400;
+        opacity: 0;
+        transition: opacity 0.2s;
+        pointer-events: none;
+      }
+      .toast.show {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- SIDEBAR -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+          <div class="logo">
+            <div class="logo-icon">⚡</div>
+            <span class="logo-text">Cerberus</span>
+          </div>
+          <div class="version">Enterprise 11.3.0.0</div>
+        </div>
+        <nav class="nav-menu" id="navMenu">
+          <!-- статическое меню с вложенностью -->
+          <div class="nav-item">
+            <a href="#" class="nav-link" data-section="summary"
+              ><span class="nav-icon">📊</span
+              ><span class="nav-label">Summary</span></a
+            >
+          </div>
+          <div class="nav-item">
+            <a href="#" class="nav-link" data-section="log"
+              ><span class="nav-icon">📝</span
+              ><span class="nav-label">Log</span></a
+            >
+          </div>
+          <div class="nav-item">
+            <a href="#" class="nav-link" data-section="connections"
+              ><span class="nav-icon">🔌</span
+              ><span class="nav-label">Connections</span></a
+            >
+          </div>
+          <div class="nav-item">
+            <a href="#" class="nav-link" data-section="reporting"
+              ><span class="nav-icon">📈</span
+              ><span class="nav-label">Reporting</span></a
+            >
+          </div>
+          <div class="nav-item">
+            <a href="#" class="nav-link" data-section="auth"
+              ><span class="nav-icon">🔐</span
+              ><span class="nav-label">Authentication</span></a
+            >
+          </div>
+          <!-- аккордеон User Manager -->
+          <div class="nav-item">
+            <button class="nav-trigger" id="triggerUserMgr">
+              <span class="nav-icon">👥</span
+              ><span class="nav-label">User Manager</span
+              ><span class="chevron" id="chevronUser">▶</span>
+            </button>
+            <div class="submenu" id="submenuUser" style="max-height: 0">
+              <a href="#" class="nav-link active" data-section="users"
+                ><span class="nav-icon">👤</span
+                ><span class="nav-label">Users</span
+                ><span class="badge-nav">37</span></a
+              >
+              <a href="#" class="nav-link" data-section="groups"
+                ><span class="nav-icon">👥</span
+                ><span class="nav-label">Groups</span></a
+              >
+              <a href="#" class="nav-link" data-section="cerberus"
+                ><span class="nav-icon">🛡️</span
+                ><span class="nav-label">Cerberus Users</span></a
+              >
+            </div>
+          </div>
+          <!-- Configuration accordion -->
+          <div class="nav-item">
+            <button class="nav-trigger" id="triggerConfig">
+              <span class="nav-icon">⚙️</span
+              ><span class="nav-label">Configuration</span
+              ><span class="chevron" id="chevronConfig">▶</span>
+            </button>
+            <div class="submenu" id="submenuConfig" style="max-height: 0">
+              <a href="#" class="nav-link" data-section="server"
+                ><span class="nav-icon">🖥️</span
+                ><span class="nav-label">Server Manager</span></a
+              >
+              <a href="#" class="nav-link" data-section="ip"
+                ><span class="nav-icon">🌐</span
+                ><span class="nav-label">IP Manager</span></a
+              >
+              <a href="#" class="nav-link" data-section="events"
+                ><span class="nav-icon">📅</span
+                ><span class="nav-label">Event Manager</span></a
+              >
+            </div>
+          </div>
+          <div class="nav-item">
+            <a href="#" class="nav-link" data-section="help"
+              ><span class="nav-icon">❓</span
+              ><span class="nav-label">Help</span></a
+            >
+          </div>
+          <div class="nav-item">
+            <a href="#" class="nav-link" data-section="licensing"
+              ><span class="nav-icon">📄</span
+              ><span class="nav-label">Licensing</span></a
+            >
+          </div>
+        </nav>
+      </aside>
+
+      <!-- MAIN -->
+      <div class="main">
+        <div class="header">
+          <div class="header-left">
+            <button class="menu-toggle" id="toggleSidebarBtn">☰</button>
+            <div class="breadcrumbs">
+              <span>User Manager / </span><span>Users</span>
+            </div>
+          </div>
+          <div class="user-menu">
+            <span>admin@cerberus</span>
+            <div class="avatar">AD</div>
+          </div>
+        </div>
+        <div class="content" id="mainContent">
+          <div class="page-header">
+            <h1 class="page-title">User Manager</h1>
+            <button class="btn-primary" id="newUserBtn">➕ New User</button>
+          </div>
+          <div class="filters-bar">
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input
+                type="text"
+                id="searchInput"
+                placeholder="Filter users..."
+              />
+            </div>
+            <select class="select" id="groupFilter">
+              <option value="">All Groups</option>
+              <option value="Administrators">Administrators</option>
+              <option value="Developers">Developers</option>
+              <option value="Users">Users</option>
+            </select>
+            <button class="btn-secondary" id="columnsBtn">📋 Columns</button>
+          </div>
+          <div class="table-wrapper">
+            <table class="user-table" id="userTable">
+              <thead>
+                <tr>
+                  <th style="width: 40px">
+                    <input type="checkbox" id="selectAllCheckbox" />
+                  </th>
+                  <th>Name</th>
+                  <th>First Name</th>
+                  <th>Last Name</th>
+                  <th>Email</th>
+                  <th>Group</th>
+                  <th>Last Login</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="paginationControls"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DRAWER (детальная панель) -->
+    <div class="drawer" id="userDrawer">
+      <div class="drawer-header">
+        <span class="drawer-title">User Profile</span>
+        <button class="drawer-close" id="closeDrawerBtn">✕</button>
+      </div>
+      <div class="drawer-tabs">
+        <button class="drawer-tab active" data-tab="profile">Profile</button>
+        <button class="drawer-tab" data-tab="constraints">Constraints</button>
+      </div>
+      <div class="drawer-body" id="drawerBody">
+        <!-- динамический контент через js -->
+      </div>
+      <div class="drawer-footer">
+        <button class="btn-danger" id="changePwdBtn">Change Password</button>
+        <button class="btn-primary" id="updateUserBtn">Update User</button>
+      </div>
+    </div>
+
+    <!-- MODAL new user -->
+    <div class="modal-mask" id="newUserModal">
+      <div class="modal-container">
+        <h3 style="margin-bottom: 16px">Create New User</h3>
+        <div class="form-group">
+          <label class="form-label">Username</label
+          ><input type="text" id="newUsername" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label
+          ><input type="email" id="newEmail" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Group</label
+          ><select id="newGroup" class="form-select">
+            <option>Users</option>
+            <option>Developers</option>
+            <option>Administrators</option>
+          </select>
+        </div>
+        <div
+          style="
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+          "
+        >
+          <button class="btn-secondary" id="cancelModalBtn">Cancel</button>
+          <button class="btn-primary" id="confirmCreateBtn">Create</button>
+        </div>
+      </div>
+    </div>
+    <div class="toast" id="toastMsg">✓ User updated</div>
+
+    <script>
+      // ---------- MOCK DATA ----------
+      let users = [
+        {
+          id: 1,
+          username: 'dave',
+          firstName: 'Dave',
+          lastName: 'Smith',
+          email: 'dave@example.com',
+          group: 'Administrators',
+          lastLogin: '2025-03-15T14:23:00',
+          twoFactor: true,
+          phone: '701-555-1212',
+          mobile: '212-555-5555',
+          description: 'Senior admin'
+        },
+        {
+          id: 2,
+          username: 'elias',
+          firstName: 'Elias',
+          lastName: 'Moss',
+          email: 'elias@example.com',
+          group: 'Developers',
+          lastLogin: '2025-03-20T09:12:00',
+          twoFactor: true,
+          phone: null,
+          mobile: null,
+          description: ''
+        },
+        {
+          id: 3,
+          username: 'anna',
+          firstName: 'Anna',
+          lastName: 'Bell',
+          email: 'anna@example.com',
+          group: 'Users',
+          lastLogin: '2025-03-10T11:45:00',
+          twoFactor: false,
+          phone: null,
+          mobile: null,
+          description: ''
+        },
+        {
+          id: 4,
+          username: 'alita',
+          firstName: 'Alita',
+          lastName: 'Kane',
+          email: 'alita@example.com',
+          group: 'Developers',
+          lastLogin: '2025-03-18T16:20:00',
+          twoFactor: true,
+          phone: null,
+          mobile: null,
+          description: 'Frontend lead'
+        },
+        {
+          id: 5,
+          username: 'bob',
+          firstName: 'Bob',
+          lastName: 'Builder',
+          email: 'bob@example.com',
+          group: 'Users',
+          lastLogin: '2025-02-28T08:30:00',
+          twoFactor: false,
+          phone: null,
+          mobile: null,
+          description: ''
+        },
+        {
+          id: 6,
+          username: 'grant',
+          firstName: 'Grant',
+          lastName: 'Adams',
+          email: 'grant@example.com',
+          group: 'Administrators',
+          lastLogin: '2025-03-19T22:10:00',
+          twoFactor: true,
+          phone: null,
+          mobile: null,
+          description: 'IT manager'
+        }
+      ]
+      let selectedUserId = null
+      let currentPage = 1
+      const itemsPerPage = 5
+      let searchTerm = ''
+      let groupFilter = ''
+
+      // helper render table
+      function renderTable() {
+        let filtered = users.filter((u) => {
+          const matchSearch =
+            u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (u.email &&
+              u.email.toLowerCase().includes(searchTerm.toLowerCase()))
+          const matchGroup = groupFilter === '' || u.group === groupFilter
+          return matchSearch && matchGroup
+        })
+        const total = filtered.length
+        const totalPages = Math.ceil(total / itemsPerPage)
+        const start = (currentPage - 1) * itemsPerPage
+        const pageUsers = filtered.slice(start, start + itemsPerPage)
+        const tbody = document.getElementById('tableBody')
+        tbody.innerHTML = ''
+        pageUsers.forEach((u) => {
+          const row = tbody.insertRow()
+          row.setAttribute('data-id', u.id)
+          if (selectedUserId === u.id) row.classList.add('selected-row')
+          const cbCell = row.insertCell(0)
+          const cb = document.createElement('input')
+          cb.type = 'checkbox'
+          cb.classList.add('row-checkbox')
+          cb.dataset.id = u.id
+          cbCell.appendChild(cb)
+          row.insertCell(1).innerHTML =
+            `<div class="user-info"><strong>${escapeHtml(u.username)}</strong>${u.twoFactor ? '<span class="badge-2fa">2FA</span>' : ''}</div>`
+          row.insertCell(2).innerHTML = u.firstName || '-'
+          row.insertCell(3).innerHTML = u.lastName || '-'
+          row.insertCell(4).innerHTML = u.email || '-'
+          row.insertCell(5).innerHTML = u.group
+          row.insertCell(6).innerHTML = u.lastLogin
+            ? new Date(u.lastLogin).toLocaleString()
+            : 'Never'
+          row.addEventListener('click', (e) => {
+            if (e.target.type !== 'checkbox') openDrawer(u.id)
+          })
+          cb.addEventListener('click', (e) => e.stopPropagation())
+        })
+        // pagination controls
+        const pagDiv = document.getElementById('paginationControls')
+        pagDiv.innerHTML = ''
+        for (let i = 1; i <= totalPages; i++) {
+          const btn = document.createElement('button')
+          btn.innerText = i
+          btn.className = 'page-btn'
+          if (i === currentPage) btn.style.background = '#e2e8f0'
+          btn.onclick = () => {
+            currentPage = i
+            renderTable()
+          }
+          pagDiv.appendChild(btn)
+        }
+        document.getElementById('selectAllCheckbox').checked = false
+      }
+
+      function openDrawer(userId) {
+        const user = users.find((u) => u.id === userId)
+        if (!user) return
+        selectedUserId = userId
+        renderTable()
+        const drawer = document.getElementById('userDrawer')
+        drawer.classList.add('open')
+        // fill profile form
+        document.getElementById('drawerBody').innerHTML = `
+            <div id="profileTabContent" style="display:block">
+                <div class="form-group"><label class="form-label">User Name</label><input type="text" id="drawerUsername" class="form-input" disabled value="${escapeHtml(user.username)}"></div>
+                <div class="form-row"><div class="form-group"><label class="form-label">First Name</label><input type="text" id="drawerFirstName" class="form-input" value="${escapeHtml(user.firstName || '')}"></div>
+                <div class="form-group"><label class="form-label">Last Name</label><input type="text" id="drawerLastName" class="form-input" value="${escapeHtml(user.lastName || '')}"></div></div>
+                <div class="form-row"><div class="form-group"><label class="form-label">Telephone</label><input type="text" id="drawerPhone" class="form-input" value="${escapeHtml(user.phone || '')}"></div>
+                <div class="form-group"><label class="form-label">Mobile</label><input type="text" id="drawerMobile" class="form-input" value="${escapeHtml(user.mobile || '')}"></div></div>
+                <div class="form-group"><label class="form-label">Email</label><input type="email" id="drawerEmail" class="form-input" value="${escapeHtml(user.email || '')}"></div>
+                <div class="form-group"><label class="form-label">Description</label><textarea id="drawerDesc" rows="2" class="form-textarea">${escapeHtml(user.description || '')}</textarea></div>
+                <div class="form-group"><label class="form-label">Group</label><select id="drawerGroup" class="form-select"><option ${user.group === 'Administrators' ? 'selected' : ''}>Administrators</option><option ${user.group === 'Developers' ? 'selected' : ''}>Developers</option><option ${user.group === 'Users' ? 'selected' : ''}>Users</option></select></div>
+                <div class="info-block"><div>Last Login: ${user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}</div><div>2FA: ${user.twoFactor ? 'Enabled' : 'Disabled'}</div></div>
+            </div>
+            <div id="constraintsTabContent" style="display:none"><div class="info-block" style="text-align:center">🔒 Access Constraints configuration panel</div></div>
+        `
+        window.currentEditUserId = user.id
+        // tab switching
+        document.querySelectorAll('.drawer-tab').forEach((tab) => {
+          tab.onclick = () => {
+            document
+              .querySelectorAll('.drawer-tab')
+              .forEach((t) => t.classList.remove('active'))
+            tab.classList.add('active')
+            const isProfile = tab.dataset.tab === 'profile'
+            document.getElementById('profileTabContent').style.display =
+              isProfile ? 'block' : 'none'
+            document.getElementById('constraintsTabContent').style.display =
+              isProfile ? 'none' : 'block'
+          }
+        })
+      }
+
+      function closeDrawer() {
+        document.getElementById('userDrawer').classList.remove('open')
+        selectedUserId = null
+        renderTable()
+      }
+
+      function updateCurrentUser() {
+        const id = window.currentEditUserId
+        const userIndex = users.findIndex((u) => u.id === id)
+        if (userIndex === -1) return
+        const updated = {
+          ...users[userIndex],
+          firstName: document.getElementById('drawerFirstName')?.value || '',
+          lastName: document.getElementById('drawerLastName')?.value || '',
+          email: document.getElementById('drawerEmail')?.value || '',
+          phone: document.getElementById('drawerPhone')?.value || '',
+          mobile: document.getElementById('drawerMobile')?.value || '',
+          description: document.getElementById('drawerDesc')?.value || '',
+          group: document.getElementById('drawerGroup')?.value || 'Users'
+        }
+        users[userIndex] = updated
+        renderTable()
+        showToast('User profile updated')
+        closeDrawer()
+      }
+
+      function createNewUser() {
+        const username = document.getElementById('newUsername').value.trim()
+        const email = document.getElementById('newEmail').value.trim()
+        const group = document.getElementById('newGroup').value
+        if (!username) {
+          showToast('Username required')
+          return
+        }
+        const newId = Date.now()
+        users.push({
+          id: newId,
+          username,
+          firstName: '',
+          lastName: '',
+          email,
+          group,
+          lastLogin: null,
+          twoFactor: false,
+          phone: '',
+          mobile: '',
+          description: ''
+        })
+        renderTable()
+        document.getElementById('newUserModal').classList.remove('active')
+        showToast(`User ${username} created`)
+        document.getElementById('newUsername').value = ''
+        document.getElementById('newEmail').value = ''
+      }
+
+      function showToast(msg) {
+        const toast = document.getElementById('toastMsg')
+        toast.innerText = msg
+        toast.classList.add('show')
+        setTimeout(() => toast.classList.remove('show'), 2000)
+      }
+
+      function escapeHtml(str) {
+        if (!str) return ''
+        return str.replace(/[&<>]/g, function (m) {
+          if (m === '&') return '&amp;'
+          if (m === '<') return '&lt;'
+          if (m === '>') return '&gt;'
+          return m
+        })
+      }
+
+      // event listeners
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        searchTerm = e.target.value
+        currentPage = 1
+        renderTable()
+      })
+      document.getElementById('groupFilter').addEventListener('change', (e) => {
+        groupFilter = e.target.value
+        currentPage = 1
+        renderTable()
+      })
+      document.getElementById('newUserBtn').onclick = () => {
+        document.getElementById('newUserModal').classList.add('active')
+      }
+      document.getElementById('cancelModalBtn').onclick = () =>
+        document.getElementById('newUserModal').classList.remove('active')
+      document.getElementById('confirmCreateBtn').onclick = createNewUser
+      document.getElementById('updateUserBtn').onclick = updateCurrentUser
+      document.getElementById('closeDrawerBtn').onclick = closeDrawer
+      document.getElementById('changePwdBtn').onclick = () =>
+        showToast('Password change dialog (mock)')
+      document
+        .getElementById('selectAllCheckbox')
+        .addEventListener('change', (e) => {
+          document
+            .querySelectorAll('.row-checkbox')
+            .forEach((cb) => (cb.checked = e.target.checked))
+        })
+      // sidebar toggling (collapsing)
+      let sidebarCollapsed = false
+      const sidebar = document.getElementById('sidebar')
+      document.getElementById('toggleSidebarBtn').onclick = () => {
+        sidebarCollapsed = !sidebarCollapsed
+        sidebar.style.width = sidebarCollapsed ? '72px' : '280px'
+        document
+          .querySelectorAll('.nav-label, .version, .badge-nav, .logo-text')
+          .forEach((el) => {
+            if (sidebarCollapsed) el.style.display = 'none'
+            else el.style.display = ''
+          })
+        if (sidebarCollapsed)
+          document.querySelector('.logo-icon').style.margin = '0 auto'
+        else document.querySelector('.logo-icon').style.margin = ''
+      }
+      // accordion logic
+      const userTrigger = document.getElementById('triggerUserMgr')
+      const subUser = document.getElementById('submenuUser')
+      const chevUser = document.getElementById('chevronUser')
+      userTrigger.onclick = () => {
+        const isOpen = subUser.style.maxHeight !== '0px'
+        subUser.style.maxHeight = isOpen ? '0' : '300px'
+        chevUser.classList.toggle('open')
+      }
+      const configTrigger = document.getElementById('triggerConfig')
+      const subConfig = document.getElementById('submenuConfig')
+      const chevConfig = document.getElementById('chevronConfig')
+      configTrigger.onclick = () => {
+        const isOpen = subConfig.style.maxHeight !== '0px'
+        subConfig.style.maxHeight = isOpen ? '0' : '300px'
+        chevConfig.classList.toggle('open')
+      }
+      // mock active state for Users link
+      document.querySelectorAll('.nav-link').forEach((link) => {
+        link.addEventListener('click', (e) => {
+          if (link.getAttribute('data-section') !== 'users') {
+            e.preventDefault()
+            showToast(`Navigation to ${link.innerText} (demo)`)
+          }
+        })
+      })
+      renderTable()
+      // open submenu UserManager by default
+      subUser.style.maxHeight = '300px'
+      chevUser.classList.add('open')
+    </script>
+  </body>
+</html>
