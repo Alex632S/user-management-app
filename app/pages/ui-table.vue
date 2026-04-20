@@ -1,5 +1,5 @@
 <template>
-  <Table :data="data">
+  <Table :data="data" loader="Загрузка...">
     <Column key="id" head="Id" />
     <Column key="email" head="Email" />
     <Column key="email" head="Email" />
