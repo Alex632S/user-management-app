@@ -15,6 +15,7 @@
           </th>
         </tr>
       </thead>
+
       <tbody>
         <tr v-for="(row, rowIndex) in dynamicData" :key="rowIndex">
           <td>
