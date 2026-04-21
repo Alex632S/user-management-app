@@ -2,8 +2,10 @@ export default {
   name: 'Column',
   props: {
     head: String,
-    key: String
+    dataKey: String,
+    selection: { type: Boolean, default: false }
   },
+
   render() {
     return null
   }
